@@ -7,6 +7,8 @@ import {
 	ActivityIndicator,
 	Share,
 	TouchableOpacity,
+	Platform,
+	Dimensions,
 } from "react-native";
 import type { ArticleScreenProps } from "../types/navigation";
 import { fetchArticle } from "../services/api";
@@ -15,11 +17,15 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArticleContent } from "../components/ArticleContent";
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const IMAGE_HEIGHT = SCREEN_WIDTH / 2; // 2:1 aspect ratio
+
 export function ArticleScreen({ route }: ArticleScreenProps) {
 	const [article, setArticle] = useState<Article | null>(
 		route.params.article ?? null,
 	);
 	const [loading, setLoading] = useState(!route.params.article);
+	const [imageError, setImageError] = useState(false);
 	const insets = useSafeAreaInsets();
 
 	useEffect(() => {
@@ -72,10 +78,11 @@ export function ArticleScreen({ route }: ArticleScreenProps) {
 
 	if (!article) return null;
 
-	const imageUrl =
-		article.yoast_head_json?.og_image?.[0]?.url ||
-		article.schema?.["@graph"]?.[0]?.thumbnailUrl ||
-		article._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
+	const imageUrl = !imageError
+		? article.yoast_head_json?.og_image?.[0]?.url ||
+			article.schema?.["@graph"]?.[0]?.thumbnailUrl ||
+			article._embedded?.["wp:featuredmedia"]?.[0]?.source_url
+		: null;
 
 	const excerpt = article.excerpt.rendered.replace(/<[^>]*>/g, "");
 	const authorName =
@@ -83,19 +90,22 @@ export function ArticleScreen({ route }: ArticleScreenProps) {
 	const readingTime =
 		article.yoast_head_json?.twitter_misc?.["Durée de lecture estimée"];
 
+	const headerHeight =
+		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
+
 	return (
 		<ScrollView
 			className="flex-1 bg-gray-50"
 			contentContainerStyle={{
-				paddingTop: insets.top,
+				paddingTop: headerHeight,
 			}}
 		>
 			<View className="p-4">
-				<Text className="text-3xl font-bold text-gray-900 mb-4">
+				<Text className="text-4xl font-bold text-gray-900 mb-4">
 					{article.title.rendered.replace(/<[^>]*>/g, "")}
 				</Text>
 
-				<Text className="text-lg text-gray-600 mb-6 italic">{excerpt}</Text>
+				<Text className="text-lg text-gray-600 italic">{excerpt}</Text>
 
 				<View className="flex-row justify-between items-center mb-6">
 					<View className="flex-1">
@@ -115,11 +125,13 @@ export function ArticleScreen({ route }: ArticleScreenProps) {
 				</View>
 
 				{imageUrl && (
-					<View className="mb-6 -mx-4">
+					<View className="rounded-lg overflow-hidden">
 						<Image
 							source={{ uri: imageUrl }}
-							className="w-full h-64"
+							className="w-full"
+							style={{ height: IMAGE_HEIGHT }}
 							resizeMode="cover"
+							onError={() => setImageError(true)}
 						/>
 					</View>
 				)}
