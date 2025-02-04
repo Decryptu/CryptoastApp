@@ -31,6 +31,10 @@ open -a Simulator
 bun run ios
 ```
 
+### Simulator Shortcut
+
+You can open it at any time with the ⌘ + D keyboard shortcut ("Connect Hardware Keyboard" must be enabled on your simulator to use this shortcut, you can toggle it with ⌘ + Shift + K).
+
 ## Project Structure
 
 ```t

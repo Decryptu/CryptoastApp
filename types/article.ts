@@ -38,5 +38,17 @@ export interface Article {
 			"Durée de lecture estimée"?: string;
 		};
 		author?: string;
+		og_image?: Array<{
+			url: string;
+			width: number;
+			height: number;
+			type: string;
+		}>;
+	};
+	schema?: {
+		"@graph": Array<{
+			thumbnailUrl?: string;
+			description?: string;
+		}>;
 	};
 }
