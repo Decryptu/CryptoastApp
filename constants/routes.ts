@@ -9,6 +9,8 @@ export type TabRoute = {
 export const ROUTES = {
 	NEWS: "index",
 	GUIDES: "guides",
+	SHEETS: "sheets",
+	REPORTS: "reports",
 } as const;
 
 export const TAB_ROUTES: TabRoute[] = [
@@ -21,6 +23,16 @@ export const TAB_ROUTES: TabRoute[] = [
 		name: ROUTES.GUIDES,
 		title: "Guides",
 		iconName: "book",
+	},
+	{
+		name: ROUTES.SHEETS,
+		title: "Sheets",
+		iconName: "file-text",
+	},
+	{
+		name: ROUTES.REPORTS,
+		title: "Reports",
+		iconName: "bar-chart-2",
 	},
 ] as const;
 
