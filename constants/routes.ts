@@ -16,7 +16,7 @@ export const ROUTES = {
 export const TAB_ROUTES: TabRoute[] = [
 	{
 		name: ROUTES.NEWS,
-		title: "News",
+		title: "Actualités",
 		iconName: "home",
 	},
 	{
@@ -26,17 +26,17 @@ export const TAB_ROUTES: TabRoute[] = [
 	},
 	{
 		name: ROUTES.SHEETS,
-		title: "Sheets",
+		title: "Fiches",
 		iconName: "file-text",
 	},
 	{
 		name: ROUTES.REPORTS,
-		title: "Reports",
+		title: "Dossiers",
 		iconName: "bar-chart-2",
 	},
 ] as const;
 
 export function getRouteTitle(routeName: string): string {
 	const route = TAB_ROUTES.find((r) => r.name === routeName);
-	return route?.title || "News";
+	return route?.title || "Actualités";
 }
