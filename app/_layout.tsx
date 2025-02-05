@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
 import "../global.css";
 import { ArticleHeader } from "../components/ArticleHeader";
+import colors from "tailwindcss/colors";
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
@@ -12,7 +13,7 @@ export default function RootLayout() {
 			screenOptions={{
 				headerShown: false,
 				contentStyle: {
-					backgroundColor: isDark ? "#000" : "#fff",
+					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 				},
 			}}
 		>

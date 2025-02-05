@@ -85,7 +85,7 @@ export function ArticleListScreen({ fetchArticles, logLabel }: Props) {
 
 	if (loading) {
 		return (
-			<SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+			<SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
 				<StatusBar style={isDark ? "light" : "dark"} />
 				{renderSkeletons()}
 			</SafeAreaView>
@@ -93,7 +93,7 @@ export function ArticleListScreen({ fetchArticles, logLabel }: Props) {
 	}
 
 	return (
-		<SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+		<SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
 			<StatusBar style={isDark ? "light" : "dark"} />
 			<FlatList
 				data={articles}

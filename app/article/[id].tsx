@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
 	View,
 	Text,
@@ -10,9 +10,11 @@ import {
 	Platform,
 	Dimensions,
 	useColorScheme,
+	RefreshControl,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { fetchArticle } from "../../services/api";
+import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,24 +27,51 @@ export default function ArticleScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
 	const [imageError, setImageError] = useState(false);
 	const insets = useSafeAreaInsets();
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	useEffect(() => {
-		const loadArticle = async () => {
+	const loadArticle = useCallback(
+		async (forceRefresh = false) => {
 			try {
-				const data = await fetchArticle(Number(id));
+				const articleId = Number(id);
+
+				// Try to get cached article first
+				if (!forceRefresh) {
+					const cachedArticle = await getArticleCache(articleId);
+					if (cachedArticle) {
+						setArticle(cachedArticle);
+						setLoading(false);
+						return;
+					}
+				}
+
+				// Fetch fresh article
+				const data = await fetchArticle(articleId);
 				setArticle(data);
+
+				// Cache the new article
+				await setArticleCache(articleId, data);
 			} catch (error) {
 				console.error("Failed to load article:", error);
 			} finally {
 				setLoading(false);
 			}
-		};
+		},
+		[id],
+	);
+
+	useEffect(() => {
 		void loadArticle();
-	}, [id]);
+	}, [loadArticle]);
+
+	const handleRefresh = useCallback(async () => {
+		setRefreshing(true);
+		await loadArticle(true);
+		setRefreshing(false);
+	}, [loadArticle]);
 
 	const handleShare = async () => {
 		if (!article) return;
@@ -70,7 +99,7 @@ export default function ArticleScreen() {
 
 	if (loading) {
 		return (
-			<View className="flex-1 justify-center items-center bg-white dark:bg-gray-900">
+			<View className="flex-1 justify-center items-center bg-white dark:bg-zinc-900">
 				<ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
 			</View>
 		);
@@ -94,30 +123,37 @@ export default function ArticleScreen() {
 		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
 
 	return (
-		<View className="flex-1 bg-white dark:bg-gray-900">
+		<View className="flex-1 bg-white dark:bg-zinc-900">
 			<ScrollView
 				className="flex-1"
 				contentContainerStyle={{
 					paddingTop: headerHeight + 16,
 				}}
+				refreshControl={
+					<RefreshControl
+						refreshing={refreshing}
+						onRefresh={handleRefresh}
+						tintColor={isDark ? "#fff" : "#000"}
+					/>
+				}
 			>
 				<View className="p-4">
-					<Text className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+					<Text className="text-4xl font-bold text-zinc-900 dark:text-white mb-4">
 						{article.title.rendered.replace(/<[^>]*>/g, "")}
 					</Text>
 
-					<Text className="text-lg text-gray-600 dark:text-gray-300 italic">
+					<Text className="text-lg text-zinc-600 dark:text-zinc-300 italic">
 						{excerpt}
 					</Text>
 
 					<View className="flex-row justify-between items-center mb-6">
 						<View className="flex-1">
 							{authorName && (
-								<Text className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+								<Text className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">
 									Par {authorName}
 								</Text>
 							)}
-							<Text className="text-sm text-gray-500 dark:text-gray-400">
+							<Text className="text-sm text-zinc-500 dark:text-zinc-400">
 								{formattedDate}
 								{readingTime && ` • ${readingTime}`}
 							</Text>

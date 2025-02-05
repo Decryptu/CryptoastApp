@@ -28,7 +28,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={id}
-							className="text-4xl font-bold mt-8 mb-6 text-gray-900 dark:text-white"
+							className="text-4xl font-bold mt-8 mb-6 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -39,7 +39,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={id}
-							className="text-3xl font-bold mt-8 mb-4 text-gray-900 dark:text-white"
+							className="text-3xl font-bold mt-8 mb-4 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -50,7 +50,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={id}
-							className="text-2xl font-bold mt-6 mb-3 text-gray-900 dark:text-white"
+							className="text-2xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -67,10 +67,10 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 								<TouchableOpacity
 									key={id}
 									onPress={() => Linking.openURL(linkMatch[1])}
-									className="flex-row items-center bg-blue-50 dark:bg-blue-900 p-4 my-3 rounded-lg"
+									className="flex-row items-center bg-zinc-50 dark:bg-zinc-900 p-4 my-3 rounded-lg"
 								>
 									<Text className="text-lg mr-2">💡</Text>
-									<Text className="text-blue-600 dark:text-blue-400 flex-1">
+									<Text className="text-zinc-600 dark:text-zinc-400 flex-1">
 										{linkMatch[2].replace(/<[^>]*>/g, "")}
 									</Text>
 								</TouchableOpacity>
@@ -89,7 +89,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={id}
-							className="text-base text-gray-800 dark:text-gray-200 leading-relaxed mb-4"
+							className="text-base text-zinc-800 dark:text-zinc-200 leading-relaxed mb-4"
 						>
 							{text}
 						</Text>
