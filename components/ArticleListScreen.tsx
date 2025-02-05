@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-	View,
 	FlatList,
-	ActivityIndicator,
 	RefreshControl,
 	SafeAreaView,
 	useColorScheme,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { ArticleCard } from "./ArticleCard";
+import { ArticleSkeleton } from "./ArticleSkeleton";
+import { getArticlesCache, setArticlesCache } from "../services/ArticleCache";
 import { useRouter } from "expo-router";
 import type { Article } from "../types/article";
 
@@ -25,40 +25,70 @@ export function ArticleListScreen({ fetchArticles, logLabel }: Props) {
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	const loadArticles = useCallback(async () => {
-		try {
-			const data = await fetchArticles();
-			console.log(`Fetched ${logLabel}:`, data.length);
-			setArticles(data);
-		} catch (error) {
-			console.error(`Failed to load ${logLabel}:`, error);
-		} finally {
-			setLoading(false);
-		}
-	}, [fetchArticles, logLabel]);
+	const loadArticles = useCallback(
+		async (forceRefresh = false) => {
+			try {
+				// Try to get cached data first
+				if (!forceRefresh) {
+					const cachedArticles = await getArticlesCache(logLabel);
+					if (cachedArticles) {
+						setArticles(cachedArticles);
+						setLoading(false);
+						return;
+					}
+				}
+
+				// Fetch fresh data
+				const data = await fetchArticles();
+				console.log(`Fetched ${logLabel}:`, data.length);
+
+				// Update state and cache
+				setArticles(data);
+				await setArticlesCache(logLabel, data);
+			} catch (error) {
+				console.error(`Failed to load ${logLabel}:`, error);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[fetchArticles, logLabel],
+	);
 
 	useEffect(() => {
 		void loadArticles();
 	}, [loadArticles]);
 
-	const handleRefresh = async () => {
+	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
-		await loadArticles();
+		await loadArticles(true);
 		setRefreshing(false);
-	};
+	}, [loadArticles]);
 
-	const handleArticlePress = (article: Article) => {
-		router.push({
-			pathname: "/article/[id]",
-			params: { id: article.id },
-		});
-	};
+	const handleArticlePress = useCallback(
+		(article: Article) => {
+			router.push({
+				pathname: "/article/[id]",
+				params: { id: article.id },
+			});
+		},
+		[router],
+	);
+
+	const renderSkeletons = () => (
+		<FlatList
+			data={[1, 2, 3]} // Show 3 skeleton items
+			keyExtractor={(item) => item.toString()}
+			renderItem={() => <ArticleSkeleton />}
+			contentContainerClassName="p-4"
+		/>
+	);
 
 	if (loading) {
 		return (
-			<View className="flex-1 justify-center items-center bg-white dark:bg-gray-900">
-				<ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
-			</View>
+			<SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+				<StatusBar style={isDark ? "light" : "dark"} />
+				{renderSkeletons()}
+			</SafeAreaView>
 		);
 	}
 
