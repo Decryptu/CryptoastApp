@@ -1,32 +1,25 @@
-import './global.css';
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { HomeScreen } from './screens/HomeScreen';
-import { ArticleScreen } from './screens/ArticleScreen';
-import type { RootStackParamList } from './types/navigation';
+import "./global.css";
+import { useEffect } from "react";
+import { useColorScheme } from "react-native";
+import { SplashScreen, Stack } from "expo-router";
+import { NavigationContainer } from "@react-navigation/native";
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen 
-          name="Home" 
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="Article" 
-          component={ArticleScreen}
-          options={{ 
-            headerTitle: "",
-            headerTransparent: true,
-            headerTintColor: '#000',
-          }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+export default function RootLayout() {
+	const colorScheme = useColorScheme();
+
+	useEffect(() => {
+		// Hide splash screen once the app is ready
+		SplashScreen.hideAsync();
+	}, []);
+
+	return (
+		<NavigationContainer>
+			<Stack>
+				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+			</Stack>
+		</NavigationContainer>
+	);
 }

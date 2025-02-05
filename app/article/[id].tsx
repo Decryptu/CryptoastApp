@@ -10,39 +10,36 @@ import {
 	Platform,
 	Dimensions,
 } from "react-native";
-import type { ArticleScreenProps } from "../types/navigation";
-import { fetchArticle } from "../services/api";
-import type { Article } from "../types/article";
+import { useLocalSearchParams } from "expo-router";
+import { fetchArticle } from "../../services/api";
+import type { Article } from "../../types/article";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArticleContent } from "../components/ArticleContent";
+import { ArticleContent } from "../../components/ArticleContent";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const IMAGE_HEIGHT = SCREEN_WIDTH / 2; // 2:1 aspect ratio
+const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
 
-export function ArticleScreen({ route }: ArticleScreenProps) {
-	const [article, setArticle] = useState<Article | null>(
-		route.params.article ?? null,
-	);
-	const [loading, setLoading] = useState(!route.params.article);
+export default function ArticleScreen() {
+	const { id } = useLocalSearchParams<{ id: string }>();
+	const [article, setArticle] = useState<Article | null>(null);
+	const [loading, setLoading] = useState(true);
 	const [imageError, setImageError] = useState(false);
 	const insets = useSafeAreaInsets();
 
 	useEffect(() => {
-		if (!article) {
-			const loadArticle = async () => {
-				try {
-					const data = await fetchArticle(route.params.articleId);
-					setArticle(data);
-				} catch (error) {
-					console.error("Failed to load article:", error);
-				} finally {
-					setLoading(false);
-				}
-			};
-			void loadArticle();
-		}
-	}, [article, route.params.articleId]);
+		const loadArticle = async () => {
+			try {
+				const data = await fetchArticle(Number(id));
+				setArticle(data);
+			} catch (error) {
+				console.error("Failed to load article:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+		void loadArticle();
+	}, [id]);
 
 	const handleShare = async () => {
 		if (!article) return;
