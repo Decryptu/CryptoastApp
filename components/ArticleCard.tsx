@@ -35,7 +35,7 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 	return (
 		<TouchableOpacity
 			onPress={onPress}
-			className="bg-white dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden"
+			className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden"
 		>
 			{imageUrl && (
 				<Image
