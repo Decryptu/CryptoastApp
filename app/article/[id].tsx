@@ -9,6 +9,7 @@ import {
 	TouchableOpacity,
 	Platform,
 	Dimensions,
+	useColorScheme,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { fetchArticle } from "../../services/api";
@@ -26,6 +27,8 @@ export default function ArticleScreen() {
 	const [loading, setLoading] = useState(true);
 	const [imageError, setImageError] = useState(false);
 	const insets = useSafeAreaInsets();
+	const colorScheme = useColorScheme();
+	const isDark = colorScheme === "dark";
 
 	useEffect(() => {
 		const loadArticle = async () => {
@@ -67,8 +70,8 @@ export default function ArticleScreen() {
 
 	if (loading) {
 		return (
-			<View className="flex-1 justify-center items-center bg-gray-50">
-				<ActivityIndicator size="large" />
+			<View className="flex-1 justify-center items-center bg-white dark:bg-gray-900">
+				<ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
 			</View>
 		);
 	}
@@ -91,34 +94,40 @@ export default function ArticleScreen() {
 		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
 
 	return (
-		<View className="flex-1 bg-gray-50">
+		<View className="flex-1 bg-white dark:bg-gray-900">
 			<ScrollView
 				className="flex-1"
 				contentContainerStyle={{
-					paddingTop: headerHeight + 16, // Add extra padding to account for header
+					paddingTop: headerHeight + 16,
 				}}
 			>
 				<View className="p-4">
-					<Text className="text-4xl font-bold text-gray-900 mb-4">
+					<Text className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
 						{article.title.rendered.replace(/<[^>]*>/g, "")}
 					</Text>
 
-					<Text className="text-lg text-gray-600 italic">{excerpt}</Text>
+					<Text className="text-lg text-gray-600 dark:text-gray-300 italic">
+						{excerpt}
+					</Text>
 
 					<View className="flex-row justify-between items-center mb-6">
 						<View className="flex-1">
 							{authorName && (
-								<Text className="text-sm text-gray-600 mb-1">
+								<Text className="text-sm text-gray-600 dark:text-gray-400 mb-1">
 									Par {authorName}
 								</Text>
 							)}
-							<Text className="text-sm text-gray-500">
+							<Text className="text-sm text-gray-500 dark:text-gray-400">
 								{formattedDate}
 								{readingTime && ` • ${readingTime}`}
 							</Text>
 						</View>
 						<TouchableOpacity onPress={handleShare} className="ml-4">
-							<Feather name="share-2" size={24} color="#666666" />
+							<Feather
+								name="share-2"
+								size={24}
+								color={isDark ? "#9CA3AF" : "#666666"}
+							/>
 						</TouchableOpacity>
 					</View>
 

@@ -4,20 +4,27 @@ import { useColorScheme } from "react-native";
 import { SplashScreen, Stack } from "expo-router";
 import { NavigationContainer } from "@react-navigation/native";
 
-// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
 
 	useEffect(() => {
-		// Hide splash screen once the app is ready
+		// For debugging
+		console.log("Current color scheme:", colorScheme);
 		SplashScreen.hideAsync();
-	}, []);
+	}, [colorScheme]);
 
 	return (
 		<NavigationContainer>
-			<Stack>
+			<Stack
+				screenOptions={{
+					headerShown: false,
+					contentStyle: {
+						backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+					},
+				}}
+			>
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 			</Stack>
 		</NavigationContainer>

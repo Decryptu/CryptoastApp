@@ -10,6 +10,14 @@ export default function TabLayout() {
 	return (
 		<Tabs
 			screenOptions={{
+				// Add these header style options
+				headerStyle: {
+					backgroundColor: isDark ? "#000" : "#fff",
+				},
+				headerTitleStyle: {
+					color: isDark ? "#fff" : "#000",
+				},
+				// Existing tab bar styles
 				tabBarStyle: {
 					backgroundColor: isDark ? "#000" : "#fff",
 					borderTopColor: isDark ? "#333" : "#e5e5e5",
