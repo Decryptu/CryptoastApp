@@ -12,23 +12,27 @@ export const categories: Category[] = [
 		id: 62,
 		children: [
 			{
-				name: "Actualité de l'Ethereum (ETH)",
+				name: "Bitcoin",
+				id: 90,
+			},
+			{
+				name: "Ethereum",
 				id: 92,
 			},
 			{
-				name: "Actualité de la Blockchain",
+				name: "Blockchain",
 				id: 89,
 			},
 			{
-				name: "Actualité de la DeFi",
+				name: "DeFi",
 				id: 1878,
 			},
 			{
-				name: "Actualité des Altcoins",
+				name: "Altcoins",
 				id: 91,
 			},
 			{
-				name: "Actualité des Exchanges",
+				name: "Exchanges",
 				id: 95,
 			},
 			{
@@ -36,43 +40,39 @@ export const categories: Category[] = [
 				id: 1877,
 			},
 			{
-				name: "Actualité du Bitcoin (BTC)",
-				id: 90,
-			},
-			{
-				name: "Actualité du Metaverse",
+				name: "Metaverse",
 				id: 4327,
 			},
 			{
-				name: "Actualité du Minage",
+				name: "Minage",
 				id: 521,
 			},
 			{
-				name: "Actualité du Ripple (XRP)",
+				name: "Ripple",
 				id: 93,
 			},
 			{
-				name: "Actualité Économie et Finance",
+				name: "Économie et Finance",
 				id: 4300,
 			},
 			{
-				name: "Actualité Régulation Crypto",
+				name: "Régulation",
 				id: 94,
 			},
 			{
-				name: "Actualités des airdrops",
+				name: "Airdrops",
 				id: 5558,
 			},
 			{
-				name: "Actualités GameFi",
+				name: "GameFi",
 				id: 3890,
 			},
 			{
-				name: "Analyse du prix du Bitcoin et des crypto-monnaies",
+				name: "Analyses",
 				id: 67,
 			},
 			{
-				name: "Analyse On-Chain",
+				name: "On-Chain",
 				id: 2858,
 			},
 			{
@@ -94,7 +94,7 @@ export const categories: Category[] = [
 		id: 112,
 	},
 	{
-		name: "Analyses de cryptomonnaies",
+		name: "Fiches",
 		id: 5,
 	},
 	{
@@ -117,6 +117,14 @@ export const categories: Category[] = [
 				name: "Autre",
 				id: 3887,
 			},
+            {
+				name: "Bitcoin",
+				id: 3885,
+			},
+			{
+				name: "Ethereum",
+				id: 3886,
+			},
 			{
 				name: "Blockchain",
 				id: 111,
@@ -126,43 +134,35 @@ export const categories: Category[] = [
 				id: 5172,
 			},
 			{
-				name: "DeFi : finance décentralisée",
+				name: "DeFi",
 				id: 108,
 			},
 			{
-				name: "Droit et Fiscalité",
+				name: "Droit",
 				id: 69,
 			},
 			{
-				name: "Exchanges crypto",
+				name: "Exchanges",
 				id: 115,
 			},
 			{
-				name: "Formation Bitcoin",
-				id: 3885,
-			},
-			{
-				name: "Formation Ethereum",
-				id: 3886,
-			},
-			{
-				name: "Guide sur le Trading",
+				name: "Trading",
 				id: 66,
 			},
 			{
-				name: "Minage, Masternodes et Staking",
+				name: "POW & POS",
 				id: 99,
 			},
 			{
-				name: "NFT : Tokens non fongibles",
+				name: "NFT",
 				id: 2756,
 			},
 			{
-				name: "Personnalités cryptos",
+				name: "Personnalités",
 				id: 78,
 			},
 			{
-				name: "Sécurité et Stockage",
+				name: "Sécurité",
 				id: 71,
 			},
 		],
@@ -207,38 +207,8 @@ export const categories: Category[] = [
 
 // Create category mappings for each section
 export const CATEGORY_MAPPINGS = {
-	NEWS: [
-		89, // Actualité de la Blockchain
-		90, // Actualité du Bitcoin
-		91, // Actualité des Altcoins
-		92, // Actualité de l'Ethereum
-		93, // Actualité du Ripple
-		94, // Actualité Régulation Crypto
-		95, // Actualité des Exchanges
-		521, // Actualité du Minage
-		1877, // Actualité des NFT
-		1878, // Actualité de la DeFi
-		3890, // Actualités GameFi
-		4327, // Actualité du Metaverse
-	],
-	GUIDES: [
-		66, // Guide sur le Trading
-		69, // Droit et Fiscalité
-		71, // Sécurité et Stockage
-		99, // Minage, Masternodes et Staking
-		108, // DeFi : finance décentralisée
-		111, // Blockchain
-		115, // Exchanges crypto
-		2756, // NFT : Tokens non fongibles
-		3885, // Formation Bitcoin
-		3886, // Formation Ethereum
-		5172, // Bourse
-	],
-	REPORTS: [
-		4301, // Dossiers
-		5815, // Tribunes
-	],
-	SHEETS: [
-		5, // Analyses de cryptomonnaies
-	],
+	NEWS: [89, 90, 91, 92, 93, 94, 95, 521, 1877, 1878, 3890, 4327],
+	GUIDES: [66, 69, 71, 99, 108, 111, 115, 2756, 3885, 3886, 5172],
+	REPORTS: [4301, 5815],
+	SHEETS: [5],
 } as const;

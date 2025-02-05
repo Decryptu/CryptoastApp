@@ -6,6 +6,7 @@ const ARTICLE_CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes for individual articl
 const CACHE_PREFIX = {
 	LISTS: "articles_list_cache_",
 	ARTICLES: "article_cache_",
+	CATEGORIES: "category_list_cache_", // Add category-specific cache prefix
 } as const;
 
 type CacheEntry<T> = {
@@ -21,46 +22,71 @@ const isExpired = (timestamp: number, expiryTime: number): boolean => {
 	return Date.now() - timestamp > expiryTime;
 };
 
-// List caching functions
+// Enhanced setArticlesCache to handle category information
 export const setArticlesCache = async (
 	type: string,
 	articles: Article[],
+	categoryId?: number | null,
 ): Promise<void> => {
 	try {
-		const cacheKey = getCacheKey(CACHE_PREFIX.LISTS, type);
+		// Include category in cache key if provided
+		const cacheKey = getCacheKey(
+			CACHE_PREFIX.LISTS,
+			categoryId ? `${type}_cat_${categoryId}` : type,
+		);
+
 		const cacheEntry: CacheEntry<Article[]> = {
 			data: articles,
 			timestamp: Date.now(),
 		};
 
 		await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
-		console.log(`Cached ${articles.length} articles for ${type}`);
+		console.log(
+			`📦 Cached ${articles.length} articles for ${type}${categoryId ? ` (category: ${categoryId})` : ""}`,
+		);
+
+		// Cleanup cache if needed after adding new entries
+		void cleanupCacheIfNeeded();
 	} catch (error) {
-		console.error("Cache set error:", error);
+		console.error("❌ Cache set error:", error);
 	}
 };
 
+// Enhanced getArticlesCache to handle category information
 export const getArticlesCache = async (
 	type: string,
+	categoryId?: number | null,
 ): Promise<Article[] | null> => {
 	try {
-		const cacheKey = getCacheKey(CACHE_PREFIX.LISTS, type);
+		const cacheKey = getCacheKey(
+			CACHE_PREFIX.LISTS,
+			categoryId ? `${type}_cat_${categoryId}` : type,
+		);
 		const cached = await AsyncStorage.getItem(cacheKey);
 
-		if (!cached) return null;
+		if (!cached) {
+			console.log(
+				`🔍 No cache found for ${type}${categoryId ? ` (category: ${categoryId})` : ""}`,
+			);
+			return null;
+		}
 
 		const cacheEntry: CacheEntry<Article[]> = JSON.parse(cached);
 
 		if (isExpired(cacheEntry.timestamp, LIST_CACHE_EXPIRY)) {
-			console.log(`Cache expired for ${type}`);
+			console.log(
+				`⏰ Cache expired for ${type}${categoryId ? ` (category: ${categoryId})` : ""}`,
+			);
 			await AsyncStorage.removeItem(cacheKey);
 			return null;
 		}
 
-		console.log(`Cache hit for ${type}: ${cacheEntry.data.length} articles`);
+		console.log(
+			`✅ Cache hit for ${type}${categoryId ? ` (category: ${categoryId})` : ""}: ${cacheEntry.data.length} articles`,
+		);
 		return cacheEntry.data;
 	} catch (error) {
-		console.error("Cache get error:", error);
+		console.error("❌ Cache get error:", error);
 		return null;
 	}
 };

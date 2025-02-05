@@ -1,4 +1,4 @@
-import { CATEGORY_MAPPINGS } from '../data/categories';
+import { CATEGORY_MAPPINGS } from "../data/categories";
 import type { Article } from "../types/article";
 
 export const API_URL = "https://cryptoast.fr/wp-json/wp/v2";
@@ -27,7 +27,7 @@ export const fetchLatestArticles = async (
 		}
 
 		const data: Article[] = await response.json();
-		console.log(`✅ Successfully fetched ${data.length} articles`);
+		console.log(`✅ Successfully fetched ${data.length} articles from: ${url}`);
 
 		return data;
 	} catch (error) {
@@ -40,11 +40,16 @@ export const fetchSectionArticles = async (
 	section: ContentSection,
 	page = 1,
 	perPage = 10,
+	categoryId?: number,
 ): Promise<Article[]> => {
 	try {
 		console.log(`🔄 Fetching ${section} articles...`);
-		// Create a mutable copy of the readonly array
-		const categoryIds = [...CATEGORY_MAPPINGS[section]];
+		// If categoryId is provided, use only that category
+		// Otherwise, use all categories for the section
+		const categoryIds = categoryId
+			? [categoryId]
+			: [...CATEGORY_MAPPINGS[section]];
+
 		const articles = await fetchLatestArticles(page, perPage, categoryIds);
 		console.log(`✅ Fetched ${articles.length} ${section} articles`);
 		return articles;
@@ -54,17 +59,18 @@ export const fetchSectionArticles = async (
 	}
 };
 
-export const fetchGuides = (page = 1, perPage = 10) =>
-	fetchSectionArticles("GUIDES", page, perPage);
+// Updated convenience methods to handle optional categoryId
+export const fetchGuides = (page = 1, perPage = 10, categoryId?: number) =>
+	fetchSectionArticles("GUIDES", page, perPage, categoryId);
 
-export const fetchNews = (page = 1, perPage = 10) =>
-	fetchSectionArticles("NEWS", page, perPage);
+export const fetchNews = (page = 1, perPage = 10, categoryId?: number) =>
+	fetchSectionArticles("NEWS", page, perPage, categoryId);
 
-export const fetchReports = (page = 1, perPage = 10) =>
-	fetchSectionArticles("REPORTS", page, perPage);
+export const fetchReports = (page = 1, perPage = 10, categoryId?: number) =>
+	fetchSectionArticles("REPORTS", page, perPage, categoryId);
 
-export const fetchSheets = (page = 1, perPage = 10) =>
-	fetchSectionArticles("SHEETS", page, perPage);
+export const fetchSheets = (page = 1, perPage = 10, categoryId?: number) =>
+	fetchSectionArticles("SHEETS", page, perPage, categoryId);
 
 export const fetchArticle = async (id: number): Promise<Article> => {
 	try {

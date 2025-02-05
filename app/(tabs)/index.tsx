@@ -3,6 +3,10 @@ import { fetchNews } from "../../services/api";
 
 export default function NewsScreen() {
 	return (
-		<ArticleListScreen fetchArticles={fetchNews} logLabel="news articles" />
+		<ArticleListScreen
+			fetchArticles={fetchNews}
+			logLabel="news articles"
+			section="NEWS"
+		/>
 	);
 }

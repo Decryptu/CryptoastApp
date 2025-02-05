@@ -21,12 +21,12 @@ export const TAB_ROUTES: TabRoute[] = [
 	},
 	{
 		name: ROUTES.GUIDES,
-		title: "Guides",
+		title: "Formations",
 		iconName: "book",
 	},
 	{
 		name: ROUTES.SHEETS,
-		title: "Fiches",
+		title: "Analyses",
 		iconName: "file-text",
 	},
 	{
