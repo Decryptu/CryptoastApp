@@ -1,5 +1,3 @@
-// data/categories.ts
-
 export interface Category {
 	name: string;
 	id: number;

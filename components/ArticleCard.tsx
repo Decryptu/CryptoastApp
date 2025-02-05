@@ -1,6 +1,6 @@
 import type React from "react";
 import { useMemo } from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, Image, Pressable } from "react-native";
 import type { Article } from "../types/article";
 
 type Props = {
@@ -33,44 +33,48 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 	};
 
 	return (
-		<TouchableOpacity
+		<Pressable
 			onPress={onPress}
-			className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden"
+			style={({ pressed }) => ({
+				opacity: pressed ? 0.95 : 1,
+			})}
 		>
-			{imageUrl && (
-				<Image
-					source={{ uri: imageUrl }}
-					className="w-full h-48"
-					resizeMode="cover"
-				/>
-			)}
-			<View className="p-4">
-				<Text
-					className="text-lg leading-5 font-bold text-zinc-900 dark:text-white mb-2"
-					numberOfLines={2}
-				>
-					{cleanHtml(article.title.rendered)}
-				</Text>
-
-				<Text
-					className="text-zinc-600 dark:text-zinc-300 mb-3"
-					numberOfLines={3}
-				>
-					{cleanHtml(article.excerpt.rendered)}
-				</Text>
-
-				<View className="flex-row justify-between items-center">
-					{authorName && (
-						<Text className="text-xs text-zinc-500 dark:text-zinc-400">
-							Par {authorName}
-						</Text>
-					)}
-					<Text className="text-xs text-zinc-500 dark:text-zinc-400">
-						{readingTime && `${readingTime} • `}
-						{formattedDate}
+			<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden">
+				{imageUrl && (
+					<Image
+						source={{ uri: imageUrl }}
+						className="w-full h-48"
+						resizeMode="cover"
+					/>
+				)}
+				<View className="p-4">
+					<Text
+						className="text-lg leading-5 font-bold text-zinc-900 dark:text-white mb-2"
+						numberOfLines={2}
+					>
+						{cleanHtml(article.title.rendered)}
 					</Text>
+
+					<Text
+						className="text-zinc-600 dark:text-zinc-300 mb-3"
+						numberOfLines={3}
+					>
+						{cleanHtml(article.excerpt.rendered)}
+					</Text>
+
+					<View className="flex-row justify-between items-center">
+						{authorName && (
+							<Text className="text-xs text-zinc-500 dark:text-zinc-400">
+								Par {authorName}
+							</Text>
+						)}
+						<Text className="text-xs text-zinc-500 dark:text-zinc-400">
+							{readingTime && `${readingTime} • `}
+							{formattedDate}
+						</Text>
+					</View>
 				</View>
 			</View>
-		</TouchableOpacity>
+		</Pressable>
 	);
 };
