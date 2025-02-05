@@ -91,50 +91,52 @@ export default function ArticleScreen() {
 		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
 
 	return (
-		<ScrollView
-			className="flex-1 bg-gray-50"
-			contentContainerStyle={{
-				paddingTop: headerHeight,
-			}}
-		>
-			<View className="p-4">
-				<Text className="text-4xl font-bold text-gray-900 mb-4">
-					{article.title.rendered.replace(/<[^>]*>/g, "")}
-				</Text>
+		<View className="flex-1 bg-gray-50">
+			<ScrollView
+				className="flex-1"
+				contentContainerStyle={{
+					paddingTop: headerHeight + 16, // Add extra padding to account for header
+				}}
+			>
+				<View className="p-4">
+					<Text className="text-4xl font-bold text-gray-900 mb-4">
+						{article.title.rendered.replace(/<[^>]*>/g, "")}
+					</Text>
 
-				<Text className="text-lg text-gray-600 italic">{excerpt}</Text>
+					<Text className="text-lg text-gray-600 italic">{excerpt}</Text>
 
-				<View className="flex-row justify-between items-center mb-6">
-					<View className="flex-1">
-						{authorName && (
-							<Text className="text-sm text-gray-600 mb-1">
-								Par {authorName}
+					<View className="flex-row justify-between items-center mb-6">
+						<View className="flex-1">
+							{authorName && (
+								<Text className="text-sm text-gray-600 mb-1">
+									Par {authorName}
+								</Text>
+							)}
+							<Text className="text-sm text-gray-500">
+								{formattedDate}
+								{readingTime && ` • ${readingTime}`}
 							</Text>
-						)}
-						<Text className="text-sm text-gray-500">
-							{formattedDate}
-							{readingTime && ` • ${readingTime}`}
-						</Text>
+						</View>
+						<TouchableOpacity onPress={handleShare} className="ml-4">
+							<Feather name="share-2" size={24} color="#666666" />
+						</TouchableOpacity>
 					</View>
-					<TouchableOpacity onPress={handleShare} className="ml-4">
-						<Feather name="share-2" size={24} color="#666666" />
-					</TouchableOpacity>
+
+					{imageUrl && (
+						<View className="rounded-lg overflow-hidden">
+							<Image
+								source={{ uri: imageUrl }}
+								className="w-full"
+								style={{ height: IMAGE_HEIGHT }}
+								resizeMode="cover"
+								onError={() => setImageError(true)}
+							/>
+						</View>
+					)}
+
+					<ArticleContent content={article.content.rendered} />
 				</View>
-
-				{imageUrl && (
-					<View className="rounded-lg overflow-hidden">
-						<Image
-							source={{ uri: imageUrl }}
-							className="w-full"
-							style={{ height: IMAGE_HEIGHT }}
-							resizeMode="cover"
-							onError={() => setImageError(true)}
-						/>
-					</View>
-				)}
-
-				<ArticleContent content={article.content.rendered} />
-			</View>
-		</ScrollView>
+			</ScrollView>
+		</View>
 	);
 }

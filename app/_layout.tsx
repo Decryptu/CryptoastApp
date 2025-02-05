@@ -1,16 +1,18 @@
 import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
 import "../global.css";
+import { ArticleHeader } from "../components/ArticleHeader";
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
+	const isDark = colorScheme === "dark";
 
 	return (
 		<Stack
 			screenOptions={{
 				headerShown: false,
 				contentStyle: {
-					backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+					backgroundColor: isDark ? "#000" : "#fff",
 				},
 			}}
 		>
@@ -18,10 +20,9 @@ export default function RootLayout() {
 			<Stack.Screen
 				name="article/[id]"
 				options={{
-					headerShown: true,
-					headerTitle: "",
+					header: () => <ArticleHeader />,
 					headerTransparent: true,
-					headerTintColor: "#000",
+					headerShown: true,
 				}}
 			/>
 		</Stack>
