@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColorScheme } from "react-native";
 import { getRouteTitle } from "../constants/routes";
 import type { NavigationState, ParamListBase } from "@react-navigation/native";
+import colors from "tailwindcss/colors";
 
 export function ArticleHeader() {
 	const navigation = useNavigation();
@@ -38,7 +39,7 @@ export function ArticleHeader() {
 		>
 			<HeaderBackButton
 				onPress={() => navigation.goBack()}
-				tintColor={isDark ? "#fff" : "#000"}
+				tintColor={isDark ? colors.white : colors.black}
 				label={getBackTitle()}
 				style={{
 					marginLeft: 8,

@@ -19,6 +19,7 @@ import type { Article } from "../../types/article";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArticleContent } from "../../components/ArticleContent";
+import colors from "tailwindcss/colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
@@ -100,7 +101,10 @@ export default function ArticleScreen() {
 	if (loading) {
 		return (
 			<View className="flex-1 justify-center items-center bg-white dark:bg-zinc-900">
-				<ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
+				<ActivityIndicator
+					size="large"
+					color={isDark ? colors.white : colors.black}
+				/>
 			</View>
 		);
 	}
@@ -133,7 +137,7 @@ export default function ArticleScreen() {
 					<RefreshControl
 						refreshing={refreshing}
 						onRefresh={handleRefresh}
-						tintColor={isDark ? "#fff" : "#000"}
+						tintColor={isDark ? colors.white : colors.black}
 					/>
 				}
 			>
@@ -162,7 +166,7 @@ export default function ArticleScreen() {
 							<Feather
 								name="share-2"
 								size={24}
-								color={isDark ? "#9CA3AF" : "#666666"}
+								color={isDark ? colors.zinc[400] : colors.zinc[600]}
 							/>
 						</TouchableOpacity>
 					</View>

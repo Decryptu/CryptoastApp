@@ -115,7 +115,7 @@ export const categories: Category[] = [
 				name: "Autre",
 				id: 3887,
 			},
-            {
+			{
 				name: "Bitcoin",
 				id: 3885,
 			},

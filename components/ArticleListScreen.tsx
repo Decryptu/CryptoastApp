@@ -28,6 +28,7 @@ import type { Article } from "../types/article";
 import type { ContentSection } from "../services/api";
 import type { Category } from "../data/categories";
 import { tabScrollRefs } from "../app/(tabs)/_layout";
+import colors from "tailwindcss/colors";
 
 interface CategoryTab {
 	id: number;
@@ -226,7 +227,7 @@ export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
 						<RefreshControl
 							refreshing={refreshing}
 							onRefresh={handleRefresh}
-							tintColor={isDark ? "#fff" : "#000"}
+							tintColor={isDark ? colors.white : colors.black}
 						/>
 					}
 				/>
