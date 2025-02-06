@@ -27,6 +27,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArticleContent } from "../../components/ArticleContent";
 import colors from "tailwindcss/colors";
 import { useScrollToTop } from "../../hooks/useScrollToTop";
+import { Animated } from "react-native";
+import { ScrollToTopButton } from "../../components/ScrollToTopButton";
+import type { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
@@ -41,6 +44,8 @@ export default function ArticleScreen() {
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 	const scrollViewRef = useRef<ScrollView>(null);
+	const scrollY = useRef(new Animated.Value(0)).current;
+	const showScrollButton = useRef(new Animated.Value(0)).current;
 
 	// Use the custom hook to scroll to top when the article ID changes
 	useScrollToTop(scrollViewRef, id);
@@ -137,6 +142,31 @@ export default function ArticleScreen() {
 	const headerHeight =
 		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
 
+	const handleScroll = Animated.event(
+		[{ nativeEvent: { contentOffset: { y: scrollY } } }],
+		{
+			useNativeDriver: false,
+			listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+				const offsetY = event.nativeEvent.contentOffset.y;
+				if (offsetY > 200) {
+					Animated.spring(showScrollButton, {
+						toValue: 1,
+						useNativeDriver: true,
+					}).start();
+				} else {
+					Animated.spring(showScrollButton, {
+						toValue: 0,
+						useNativeDriver: true,
+					}).start();
+				}
+			},
+		},
+	);
+
+	const scrollToTop = () => {
+		scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+	};
+
 	return (
 		<View className="flex-1 bg-white dark:bg-zinc-900">
 			<ScrollView
@@ -152,6 +182,8 @@ export default function ArticleScreen() {
 						tintColor={isDark ? colors.white : colors.black}
 					/>
 				}
+				onScroll={handleScroll}
+				scrollEventThrottle={16}
 			>
 				<View className="p-4">
 					<Text className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
@@ -198,6 +230,8 @@ export default function ArticleScreen() {
 					<ArticleContent content={article.content.rendered} />
 				</View>
 			</ScrollView>
+
+			<ScrollToTopButton visible={showScrollButton} onPress={scrollToTop} />
 		</View>
 	);
 }
