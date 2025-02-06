@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { fetchArticle } from "../../services/api";
+import { ArticleHeader } from "../../components/ArticleHeader";
 import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
 import { Feather } from "@expo/vector-icons";
@@ -172,9 +173,6 @@ export default function ArticleScreen() {
 			<ScrollView
 				ref={scrollViewRef}
 				className="flex-1"
-				contentContainerStyle={{
-					paddingTop: headerHeight + 16,
-				}}
 				refreshControl={
 					<RefreshControl
 						refreshing={refreshing}
@@ -185,11 +183,11 @@ export default function ArticleScreen() {
 				onScroll={handleScroll}
 				scrollEventThrottle={16}
 			>
+				<ArticleHeader />
 				<View className="p-4">
 					<Text className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
 						{article.title.rendered.replace(/<[^>]*>/g, "")}
 					</Text>
-
 					<Text className="text-lg text-zinc-600 dark:text-zinc-300 italic">
 						{excerpt}
 					</Text>

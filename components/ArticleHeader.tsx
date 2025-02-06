@@ -32,7 +32,7 @@ export function ArticleHeader() {
 
 	return (
 		<View
-			className="absolute left-0 right-0 z-50"
+			className="bg-white dark:bg-zinc-900"
 			style={{
 				paddingTop: insets.top,
 			}}

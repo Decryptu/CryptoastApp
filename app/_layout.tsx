@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
-import { ArticleHeader } from "../components/ArticleHeader";
 import colors from "tailwindcss/colors";
 import "../global.css";
 
@@ -21,9 +20,7 @@ export default function RootLayout() {
 			<Stack.Screen
 				name="article/[id]"
 				options={{
-					header: () => <ArticleHeader />,
-					headerTransparent: true,
-					headerShown: true,
+					headerShown: false,
 				}}
 			/>
 		</Stack>
