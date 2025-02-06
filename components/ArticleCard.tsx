@@ -39,7 +39,7 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 				opacity: pressed ? 0.95 : 1,
 			})}
 		>
-			<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden">
+			<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow mb-4 overflow-hidden">
 				{imageUrl && (
 					<Image
 						source={{ uri: imageUrl }}
