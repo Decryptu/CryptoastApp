@@ -32,7 +32,11 @@ const extractArticleSlug = (url: string): string | null => {
  */
 const isInternalLink = (url: string, className?: string): boolean => {
 	if (className?.includes("btn4")) return false;
-	return url.includes("cryptoast.fr") && !url.includes("/go-");
+	return (
+		url.includes("cryptoast.fr") &&
+		!url.includes("/go-") &&
+		!url.includes("/cours-")
+	);
 };
 
 /**
@@ -217,22 +221,11 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				}
 
 				// Handle headings
-				if (section.startsWith("<h1")) {
-					return (
-						<Text
-							key={sectionId}
-							className="text-4xl font-bold mt-8 mb-6 text-zinc-900 dark:text-white"
-						>
-							{section.replace(/<[^>]*>/g, "")}
-						</Text>
-					);
-				}
-
 				if (section.startsWith("<h2")) {
 					return (
 						<Text
 							key={sectionId}
-							className="text-3xl font-bold mt-8 mb-4 text-zinc-900 dark:text-white"
+							className="text-2xl font-bold mt-8 mb-4 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -243,7 +236,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={sectionId}
-							className="text-2xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
+							className="text-xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -254,7 +247,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 					return (
 						<Text
 							key={sectionId}
-							className="text-xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
+							className="text-lg font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
 						>
 							{section.replace(/<[^>]*>/g, "")}
 						</Text>
@@ -264,28 +257,38 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				// Handle regular paragraphs
 				if (section.startsWith("<p")) {
 					// Handle special link with any emoji
+					// Handle special link with any emoji
 					const emojiRegex = /[\p{Emoji}]/u;
-					// Only process as emoji link if the paragraph contains exactly one emoji and one link
-					if (emojiRegex.test(section)) {
+					if (section.startsWith("<p") && emojiRegex.test(section)) {
 						const segments = processTextSegments(section);
 						const linkSegment = segments.find((s) => s.type === "link");
 						const linkUrl = linkSegment?.linkData?.url;
 
-						// Find the emoji in the section
-						const emoji = section.match(emojiRegex)?.[0];
+						// Make sure there's only one link and the emoji is at the start or end of the text
+						const cleanText = section.replace(/<[^>]*>/g, "").trim();
+						const hasEmojiAtStartOrEnd = /^[\p{Emoji}]|[\p{Emoji}]$/u.test(
+							cleanText,
+						);
 
-						// Check if this is a source citation or another type of link
-						const isSourceCitation = section.toLowerCase().includes("source");
-
-						// Only process as emoji link if it's not a source citation and meets the criteria
-						if (linkUrl && emoji && !isSourceCitation) {
+						// Only process as special emoji link if:
+						// 1. There's exactly one link
+						// 2. The emoji is at the start or end
+						// 3. The link isn't a "cours-" link
+						if (
+							linkUrl &&
+							hasEmojiAtStartOrEnd &&
+							segments.filter((s) => s.type === "link").length === 1 &&
+							!linkUrl.includes("/cours-")
+						) {
 							return (
 								<TouchableOpacity
 									key={sectionId}
 									onPress={() => handleLinkPress(linkUrl)}
 									className="flex-row items-center bg-zinc-50 dark:bg-zinc-900 p-4 my-3 rounded-lg"
 								>
-									<Text className="text-lg mr-2">{emoji}</Text>
+									<Text className="text-lg mr-2">
+										{cleanText.match(emojiRegex)?.[0]}
+									</Text>
 									<Text className="text-lg leading-5 text-primary-600 dark:text-primary-400 flex-1">
 										{linkSegment.content}
 									</Text>

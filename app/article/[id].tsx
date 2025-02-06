@@ -154,7 +154,7 @@ export default function ArticleScreen() {
 				}
 			>
 				<View className="p-4">
-					<Text className="text-4xl font-bold text-zinc-900 dark:text-white mb-4">
+					<Text className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
 						{article.title.rendered.replace(/<[^>]*>/g, "")}
 					</Text>
 
