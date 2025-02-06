@@ -51,45 +51,87 @@ const createIdGenerator = () => {
  * Process text to handle bold, italic, and links
  */
 const processTextSegments = (rawText: string): TextSegment[] => {
-	// First clean up any p tags
+	// First clean up any p tags and transform em tags
 	let text = rawText.replace(/<\/?p[^>]*>/g, "");
+
+	// Preserve em content but remove tags
+	text = text.replace(/<em>(.*?)<\/em>/g, "$1");
+
 	const segments: TextSegment[] = [];
+	const linkMap = new Map<string, TextSegment>();
+	let linkCounter = 0;
 
-	// Remove em tags but keep their content
-	text = text.replace(/<\/?em>/g, "");
-
-	// Handle strong/bold tags
-	text = text.replace(/<strong>(.*?)<\/strong>/g, (_, content) => {
-		segments.push({ type: "bold", content });
-		return "__BOLD__";
-	});
-
-	// Handle links
+	// First, extract all links and replace with placeholders
 	text = text.replace(
 		/<a[^>]*href="([^"]*)"(?:\s+class="([^"]*)")?\s*[^>]*>(.*?)<\/a>/g,
 		(_, url, className, content) => {
-			segments.push({
+			const placeholder = `__LINK${linkCounter}__`;
+			linkMap.set(placeholder, {
 				type: "link",
 				content,
 				linkData: { url, className },
 			});
-			return "__LINK__";
+			linkCounter++;
+			return placeholder;
 		},
 	);
 
-	// Split remaining text by our placeholders
-	const parts = text.split(/((?:__BOLD__|__LINK__))/);
+	// Handle strong tags while preserving link placeholders
+	text = text.replace(/<strong>(.*?)<\/strong>/g, (_, content) => {
+		// Check if this strong section contains any link placeholders
+		const containsLink = Array.from(linkMap.keys()).some((placeholder) =>
+			content.includes(placeholder),
+		);
 
+		if (containsLink) {
+			// Split by link placeholders while preserving them
+			const parts = content.split(/(__LINK\d+__)/);
+			const segmentGroup: TextSegment[] = [];
+
+			for (const part of parts) {
+				if (linkMap.has(part)) {
+					const linkSegment = linkMap.get(part);
+					if (linkSegment) {
+						// Safe null check
+						segmentGroup.push({
+							type: "link",
+							content: linkSegment.content,
+							linkData: linkSegment.linkData,
+						});
+					}
+				} else if (part.trim()) {
+					// This is regular bold text
+					segmentGroup.push({
+						type: "bold",
+						content: part.trim(),
+					});
+				}
+			}
+
+			segments.push(...segmentGroup);
+			return "__BOLDGROUP__".repeat(segmentGroup.length);
+		}
+
+		// Regular bold text without links
+		segments.push({ type: "bold", content });
+		return "__BOLD__";
+	});
+
+	// Process remaining text and reconstruct final segments
+	const parts = text.split(/((?:__BOLD__|__LINK\d+__|__BOLDGROUP__))/);
 	const finalSegments: TextSegment[] = [];
-	let currentIndex = 0;
+	let segmentIndex = 0;
 
 	for (const part of parts) {
 		if (!part.trim()) continue;
 
-		if (part === "__BOLD__") {
-			finalSegments.push(segments[currentIndex++]);
-		} else if (part === "__LINK__") {
-			finalSegments.push(segments[currentIndex++]);
+		if (part.startsWith("__LINK")) {
+			const linkSegment = linkMap.get(part);
+			if (linkSegment) {
+				finalSegments.push(linkSegment);
+			}
+		} else if (part === "__BOLD__" || part === "__BOLDGROUP__") {
+			finalSegments.push(segments[segmentIndex++]);
 		} else {
 			finalSegments.push({
 				type: "text",
@@ -157,10 +199,25 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				const sectionId = generateId();
 
 				// Handle blockquotes
+				// Handle blockquotes
 				if (section.startsWith("<blockquote")) {
-					const citation =
-						section.match(/<p class="blockquote-citation">(.*?)<\/p>/s)?.[1] ??
-						"";
+					let citation = "";
+
+					// Handle both types of blockquotes
+					if (section.includes('class="blockquote-citation"')) {
+						// Handle the special blockquote with citation class
+						citation =
+							section.match(
+								/<p class="blockquote-citation">(.*?)<\/p>/s,
+							)?.[1] ?? "";
+					} else {
+						// Handle regular blockquotes, extract content from p tag
+						citation =
+							section.match(/<blockquote><p>(.*?)<\/p><\/blockquote>/s)?.[1] ??
+							"";
+					}
+
+					// Process the citation text through our segment processor
 					const segments = processTextSegments(citation);
 
 					return (
@@ -205,15 +262,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 										);
 									}
 
-									if (segment.type === "italic") {
-										return (
-											<Text key={key} className="italic">
-												{segment.content}
-											</Text>
-										);
-									}
-
-									return segment.content;
+									return <Text key={key}>{segment.content}</Text>;
 								})}
 							</Text>
 						</View>
