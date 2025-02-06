@@ -51,7 +51,6 @@ export const fetchSectionArticles = async (
 			: [...CATEGORY_MAPPINGS[section]];
 
 		const articles = await fetchLatestArticles(page, perPage, categoryIds);
-		console.log(`✅ Fetched ${articles.length} ${section} articles`);
 		return articles;
 	} catch (error) {
 		console.error(`❌ Error fetching ${section} articles:`, error);

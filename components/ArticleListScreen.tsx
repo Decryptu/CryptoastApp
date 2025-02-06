@@ -27,6 +27,7 @@ import { categories, CATEGORY_MAPPINGS } from "../data/categories";
 import type { Article } from "../types/article";
 import type { ContentSection } from "../services/api";
 import type { Category } from "../data/categories";
+import { tabScrollRefs } from "../app/(tabs)/_layout";
 
 interface CategoryTab {
 	id: number;
@@ -211,6 +212,7 @@ export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
 		<GestureDetector gesture={panGesture}>
 			<Animated.View style={animatedStyle} className="flex-1">
 				<FlatList
+					ref={tabScrollRefs[section.toLowerCase()]} // Add this line
 					data={articles}
 					keyExtractor={(item) => item.id.toString()}
 					renderItem={({ item }) => (

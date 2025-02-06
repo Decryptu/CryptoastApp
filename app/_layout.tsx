@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
 import { useColorScheme } from "react-native";
-import "../global.css";
 import { ArticleHeader } from "../components/ArticleHeader";
 import colors from "tailwindcss/colors";
+import "../global.css";
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();

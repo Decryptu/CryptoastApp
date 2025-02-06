@@ -7,7 +7,7 @@ export type TabRoute = {
 };
 
 export const ROUTES = {
-	NEWS: "index",
+	NEWS: "news",
 	GUIDES: "guides",
 	SHEETS: "sheets",
 	REPORTS: "reports",
