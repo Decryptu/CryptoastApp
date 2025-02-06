@@ -1,105 +1,333 @@
-import type React from "react";
-import { View, Text, TouchableOpacity, Linking } from "react-native";
+import { type FC, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Linking } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface ArticleContentProps {
-	content: string;
+  content: string;
+  onInternalLinkPress?: (url: string) => void;
 }
 
-let uniqueId = 0;
-const generateId = () => `section-${uniqueId++}`;
+interface TextSegment {
+  type: 'text' | 'bold' | 'italic' | 'link';
+  content: string;
+  linkData?: {
+    url: string;
+    className?: string;
+  };
+}
 
-export const ArticleContent: React.FC<ArticleContentProps> = ({ content }) => {
-	const processContent = (htmlContent: string) => {
-		const sections = htmlContent
-			.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-			.replace(
-				/<blockquote\s+class="twitter-tweet"[^>]*>.*?<\/blockquote>/gs,
-				"",
-			)
-			.split(/(<h[1-3][^>]*>.*?<\/h[1-3]>|<p[^>]*>.*?<\/p>)/gs);
-
-		return sections
-			.map((section) => {
-				if (!section.trim()) return null;
-
-				const id = generateId();
-
-				if (section.startsWith("<h1")) {
-					return (
-						<Text
-							key={id}
-							className="text-4xl font-bold mt-8 mb-6 text-zinc-900 dark:text-white"
-						>
-							{section.replace(/<[^>]*>/g, "")}
-						</Text>
-					);
-				}
-
-				if (section.startsWith("<h2")) {
-					return (
-						<Text
-							key={id}
-							className="text-3xl font-bold mt-8 mb-4 text-zinc-900 dark:text-white"
-						>
-							{section.replace(/<[^>]*>/g, "")}
-						</Text>
-					);
-				}
-
-				if (section.startsWith("<h3")) {
-					return (
-						<Text
-							key={id}
-							className="text-2xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white"
-						>
-							{section.replace(/<[^>]*>/g, "")}
-						</Text>
-					);
-				}
-
-				if (section.startsWith("<p")) {
-					if (section.includes("💡")) {
-						const linkMatch = section.match(
-							/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/,
-						);
-						if (linkMatch) {
-							return (
-								<TouchableOpacity
-									key={id}
-									onPress={() => Linking.openURL(linkMatch[1])}
-									className="flex-row items-center bg-zinc-50 dark:bg-zinc-900 p-4 my-3 rounded-lg"
-								>
-									<Text className="text-lg mr-2">💡</Text>
-									<Text className="text-zinc-600 dark:text-zinc-400 flex-1">
-										{linkMatch[2].replace(/<[^>]*>/g, "")}
-									</Text>
-								</TouchableOpacity>
-							);
-						}
-					}
-
-					const text = section
-						.replace(/<strong>(.*?)<\/strong>/g, "$1")
-						.replace(/<a[^>]*>(.*?)<\/a>/g, "$1")
-						.replace(/<[^>]*>/g, "")
-						.trim();
-
-					if (!text) return null;
-
-					return (
-						<Text
-							key={id}
-							className="text-base text-zinc-800 dark:text-zinc-200 leading-relaxed mb-4"
-						>
-							{text}
-						</Text>
-					);
-				}
-
-				return null;
-			})
-			.filter(Boolean);
-	};
-
-	return <View className="pb-8">{processContent(content)}</View>;
+/**
+ * Extracts article ID from a URL
+ */
+const extractArticleSlug = (url: string): string | null => {
+  // Remove trailing slash if present
+  const cleanUrl = url.replace(/\/$/, '');
+  // Get the last part of the URL path
+  const slug = cleanUrl.split('/').pop();
+  return slug ?? null;
 };
+
+/**
+ * Checks if a link is internal
+ */
+const isInternalLink = (url: string, className?: string): boolean => {
+  if (className?.includes('btn4')) return false;
+  return url.includes('cryptoast.fr') && !url.includes('/go-');
+};
+
+/**
+ * Generates unique IDs for elements
+ */
+const createIdGenerator = () => {
+  let counter = 0;
+  return () => `section-${counter++}`;
+};
+
+/**
+ * Process text to handle bold, italic, and links
+ */
+const processTextSegments = (rawText: string): TextSegment[] => {
+  // First clean up any p tags
+  let text = rawText.replace(/<\/?p[^>]*>/g, '');
+  const segments: TextSegment[] = [];
+  
+  // Handle strong/bold tags
+  text = text.replace(/<strong>(.*?)<\/strong>/g, (_, content) => {
+    segments.push({ type: 'bold', content });
+    return '__BOLD__';
+  });
+
+  // Handle em/italic tags
+  text = text.replace(/<em>(.*?)<\/em>/g, (_, content) => {
+    segments.push({ type: 'italic', content });
+    return '__ITALIC__';
+  });
+
+  // Handle links
+  text = text.replace(/<a[^>]*href="([^"]*)"(?:\s+class="([^"]*)")?\s*[^>]*>(.*?)<\/a>/g, 
+    (_, url, className, content) => {
+      segments.push({
+        type: 'link',
+        content,
+        linkData: { url, className }
+      });
+      return '__LINK__';
+    }
+  );
+
+  // Split remaining text by our placeholders
+  const parts = text.split(/((?:__BOLD__|__ITALIC__|__LINK__))/);
+  
+  const finalSegments: TextSegment[] = [];
+  let currentIndex = 0;
+
+  for (const part of parts) {
+    if (!part.trim()) continue;
+
+    if (part === '__BOLD__') {
+      finalSegments.push(segments[currentIndex++]);
+    } else if (part === '__ITALIC__') {
+      finalSegments.push(segments[currentIndex++]);
+    } else if (part === '__LINK__') {
+      finalSegments.push(segments[currentIndex++]);
+    } else {
+      finalSegments.push({
+        type: 'text',
+        content: part
+      });
+    }
+  }
+
+  return finalSegments;
+};
+
+export const ArticleContent: FC<ArticleContentProps> = ({ content, onInternalLinkPress }) => {
+  const router = useRouter();
+  const generateId = useMemo(() => createIdGenerator(), []);
+
+  const handleLinkPress = useCallback(async (url: string, className?: string) => {
+    console.log('Link pressed:', { url, className });
+    
+    if (isInternalLink(url, className)) {
+      const slug = extractArticleSlug(url);
+      if (slug) {
+        console.log('Fetching article by slug:', slug);
+        try {
+          const response = await fetch(`https://cryptoast.fr/wp-json/wp/v2/posts?slug=${slug}`);
+          const articles = await response.json();
+          
+          if (articles && articles.length > 0) {
+            const articleId = articles[0].id;
+            console.log('Navigating to article:', articleId);
+            router.push(`/article/${articleId}`);
+          }
+        } catch (error) {
+          console.error('Error fetching article:', error);
+        }
+      }
+    } else {
+      console.log('Opening external link:', url);
+      await Linking.openURL(url);
+    }
+  }, [router]);
+
+  const processedContent = useMemo(() => {
+    // Clean content of unwanted elements
+    const cleanContent = content
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<blockquote\s+class="twitter-tweet"[^>]*>.*?<\/blockquote>/gs, '');
+
+    // Split content into sections
+    const sections = cleanContent.split(
+      /(<h[1-4][^>]*>.*?<\/h[1-4]>|<p[^>]*>.*?<\/p>|<blockquote[^>]*>.*?<\/blockquote>)/gs
+    );
+
+    return sections
+      .map((section) => {
+        if (!section.trim()) return null;
+        const sectionId = generateId();
+
+        // Handle blockquotes
+        if (section.startsWith('<blockquote')) {
+          const citation = section.match(/<p class="blockquote-citation">(.*?)<\/p>/s)?.[1] ?? '';
+          const segments = processTextSegments(citation);
+          
+          return (
+            <View 
+              key={sectionId} 
+              className="my-6 px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-l-4 border-orange-500 rounded-r-lg"
+            >
+              <Text className="font-serif italic text-lg text-zinc-700 dark:text-zinc-300">
+                {segments.map((segment, index) => {
+                  const key = `${sectionId}-${index}`;
+                  
+                  if (segment.type === 'link') {
+                    return (
+                      <Text
+                        key={key}
+                        onPress={() => segment.linkData && handleLinkPress(segment.linkData.url, segment.linkData.className)}
+                        className={isInternalLink(segment.linkData?.url ?? '', segment.linkData?.className) 
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-orange-600 dark:text-orange-400"}
+                      >
+                        {segment.content}
+                      </Text>
+                    );
+                  }
+                  
+                  if (segment.type === 'bold') {
+                    return <Text key={key} className="font-bold">{segment.content}</Text>;
+                  }
+                  
+                  if (segment.type === 'italic') {
+                    return <Text key={key} className="italic">{segment.content}</Text>;
+                  }
+                  
+                  return segment.content;
+                })}
+              </Text>
+            </View>
+          );
+        }
+
+        // Handle headings
+        if (section.startsWith('<h1')) {
+          return (
+            <Text key={sectionId} className="text-4xl font-bold mt-8 mb-6 text-zinc-900 dark:text-white">
+              {section.replace(/<[^>]*>/g, '')}
+            </Text>
+          );
+        }
+
+        if (section.startsWith('<h2')) {
+          return (
+            <Text key={sectionId} className="text-3xl font-bold mt-8 mb-4 text-zinc-900 dark:text-white">
+              {section.replace(/<[^>]*>/g, '')}
+            </Text>
+          );
+        }
+
+        if (section.startsWith('<h3')) {
+          return (
+            <Text key={sectionId} className="text-2xl font-bold mt-6 mb-3 text-zinc-900 dark:text-white">
+              {section.replace(/<[^>]*>/g, '')}
+            </Text>
+          );
+        }
+
+        // Handle source with special formatting
+        if (section.includes('<em>Source :')) {
+          const segments = processTextSegments(section);
+          return (
+            <Text key={sectionId} className="text-sm italic text-zinc-500 dark:text-zinc-400 mt-4">
+              {segments.map((segment, index) => {
+                const key = `${sectionId}-${index}`;
+                
+                if (segment.type === 'link') {
+                  return (
+                    <Text
+                      key={key}
+                      onPress={() => segment.linkData && handleLinkPress(segment.linkData.url, segment.linkData.className)}
+                      className="text-zinc-600 dark:text-zinc-300 underline"
+                    >
+                      {segment.content}
+                    </Text>
+                  );
+                }
+                
+                return segment.content;
+              })}
+            </Text>
+          );
+        }
+
+        // Handle regular paragraphs
+        if (section.startsWith('<p')) {
+          // Handle special link with 💡
+          if (section.includes('💡')) {
+            const segments = processTextSegments(section);
+            const linkSegment = segments.find(s => s.type === 'link');
+            const linkUrl = linkSegment?.linkData?.url;
+            
+            if (linkUrl) {
+              return (
+                <TouchableOpacity
+                  key={sectionId}
+                  onPress={() => handleLinkPress(linkUrl)}
+                  className="flex-row items-center bg-zinc-50 dark:bg-zinc-900 p-4 my-3 rounded-lg"
+                >
+                  <Text className="text-lg mr-2">💡</Text>
+                  <Text className="text-zinc-600 dark:text-zinc-400 flex-1">
+                    {linkSegment.content}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }
+          }
+
+          // Handle external "btn4" links
+          const btn4Match = section.match(/<a[^>]*class="btn4"[^>]*href="([^"]*)"[^>]*>.*?<span[^>]*>(.*?)<\/span><\/a>/);
+          if (btn4Match) {
+            const [, url, text] = btn4Match;
+            const bgColor = section.match(/background:[^;]*#([A-F0-9]{6})/i)?.[1] ?? 'EC602A';
+            
+            return (
+              <TouchableOpacity
+                key={sectionId}
+                onPress={() => handleLinkPress(url, 'btn4')}
+                style={{ backgroundColor: `#${bgColor}` }}
+                className="p-4 my-3 rounded-lg"
+              >
+                <Text className="text-white text-center font-medium">
+                  {text.replace(/<[^>]*>/g, '')}
+                </Text>
+              </TouchableOpacity>
+            );
+          }
+
+          // Process text segments for regular paragraphs
+          const segments = processTextSegments(section);
+          
+          return (
+            <Text key={sectionId} className="text-base text-zinc-800 dark:text-zinc-200 leading-relaxed mb-4">
+              {segments.map((segment, index) => {
+                const key = `${sectionId}-${index}`;
+                
+                if (segment.type === 'link') {
+                  return (
+                    <Text
+                      key={key}
+                      onPress={() => segment.linkData && handleLinkPress(segment.linkData.url, segment.linkData.className)}
+                      className={isInternalLink(segment.linkData?.url ?? '', segment.linkData?.className) 
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-orange-600 dark:text-orange-400"}
+                    >
+                      {segment.content}
+                    </Text>
+                  );
+                }
+                
+                if (segment.type === 'bold') {
+                  return <Text key={key} className="font-bold">{segment.content}</Text>;
+                }
+                
+                if (segment.type === 'italic') {
+                  return <Text key={key} className="italic">{segment.content}</Text>;
+                }
+                
+                return segment.content;
+              })}
+            </Text>
+          );
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+  }, [content, generateId, handleLinkPress]);
+
+  return <View className="pb-8">{processedContent}</View>;
+};
+
+export default ArticleContent;
