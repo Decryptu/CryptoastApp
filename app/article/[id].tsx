@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+	useEffect,
+	useState,
+	useMemo,
+	useCallback,
+	useRef,
+} from "react";
 import {
 	View,
 	Text,
@@ -20,6 +26,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArticleContent } from "../../components/ArticleContent";
 import colors from "tailwindcss/colors";
+import { useScrollToTop } from "../../hooks/useScrollToTop";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
@@ -33,6 +40,10 @@ export default function ArticleScreen() {
 	const insets = useSafeAreaInsets();
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
+	const scrollViewRef = useRef<ScrollView>(null);
+
+	// Use the custom hook to scroll to top when the article ID changes
+	useScrollToTop(scrollViewRef, id);
 
 	const loadArticle = useCallback(
 		async (forceRefresh = false) => {
@@ -129,6 +140,7 @@ export default function ArticleScreen() {
 	return (
 		<View className="flex-1 bg-white dark:bg-zinc-900">
 			<ScrollView
+				ref={scrollViewRef}
 				className="flex-1"
 				contentContainerStyle={{
 					paddingTop: headerHeight + 16,
