@@ -47,28 +47,12 @@ const createIdGenerator = () => {
  * Process text to handle bold, italic, and links
  */
 const processTextSegments = (rawText: string): TextSegment[] => {
+	// First clean up any p tags
 	let text = rawText.replace(/<\/?p[^>]*>/g, "");
 	const segments: TextSegment[] = [];
 
-	// Handle links first
-	text = text.replace(
-		/<a\s+([^>]*?)href="([^"]*)"([^>]*?)>(.*?)<\/a>/gi,
-		(_, attrsBefore, url, attrsAfter, content) => {
-			// Extract class name from attributes
-			const className = [
-				...attrsBefore.matchAll(/\bclass="([^"]*)"/gi),
-				...attrsAfter.matchAll(/\bclass="([^"]*)"/gi),
-			]
-				.map((match) => match[1])
-				.join(" ");
-			segments.push({
-				type: "link",
-				content: content,
-				linkData: { url, className },
-			});
-			return "__LINK__";
-		},
-	);
+	// Remove em tags but keep their content
+	text = text.replace(/<\/?em>/g, "");
 
 	// Handle strong/bold tags
 	text = text.replace(/<strong>(.*?)<\/strong>/g, (_, content) => {
@@ -76,14 +60,21 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 		return "__BOLD__";
 	});
 
-	// Handle em/italic tags
-	text = text.replace(/<em>(.*?)<\/em>/g, (_, content) => {
-		segments.push({ type: "italic", content });
-		return "__ITALIC__";
-	});
+	// Handle links
+	text = text.replace(
+		/<a[^>]*href="([^"]*)"(?:\s+class="([^"]*)")?\s*[^>]*>(.*?)<\/a>/g,
+		(_, url, className, content) => {
+			segments.push({
+				type: "link",
+				content,
+				linkData: { url, className },
+			});
+			return "__LINK__";
+		},
+	);
 
-	// Split remaining text by placeholders
-	const parts = text.split(/(__BOLD__|__ITALIC__|__LINK__)/);
+	// Split remaining text by our placeholders
+	const parts = text.split(/((?:__BOLD__|__LINK__))/);
 
 	const finalSegments: TextSegment[] = [];
 	let currentIndex = 0;
@@ -91,14 +82,15 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 	for (const part of parts) {
 		if (!part.trim()) continue;
 
-		switch (part) {
-			case "__LINK__":
-			case "__BOLD__":
-			case "__ITALIC__":
-				finalSegments.push(segments[currentIndex++]);
-				break;
-			default:
-				finalSegments.push({ type: "text", content: part });
+		if (part === "__BOLD__") {
+			finalSegments.push(segments[currentIndex++]);
+		} else if (part === "__LINK__") {
+			finalSegments.push(segments[currentIndex++]);
+		} else {
+			finalSegments.push({
+				type: "text",
+				content: part,
+			});
 		}
 	}
 
@@ -273,6 +265,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				if (section.startsWith("<p")) {
 					// Handle special link with any emoji
 					const emojiRegex = /[\p{Emoji}]/u;
+					// Only process as emoji link if the paragraph contains exactly one emoji and one link
 					if (emojiRegex.test(section)) {
 						const segments = processTextSegments(section);
 						const linkSegment = segments.find((s) => s.type === "link");
@@ -281,7 +274,11 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 						// Find the emoji in the section
 						const emoji = section.match(emojiRegex)?.[0];
 
-						if (linkUrl && emoji) {
+						// Check if this is a source citation or another type of link
+						const isSourceCitation = section.toLowerCase().includes("source");
+
+						// Only process as emoji link if it's not a source citation and meets the criteria
+						if (linkUrl && emoji && !isSourceCitation) {
 							return (
 								<TouchableOpacity
 									key={sectionId}
