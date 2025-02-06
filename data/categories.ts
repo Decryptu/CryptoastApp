@@ -206,7 +206,7 @@ export const categories: Category[] = [
 // Create category mappings for each section
 export const CATEGORY_MAPPINGS = {
 	NEWS: [89, 90, 91, 92, 93, 94, 95, 521, 1877, 1878, 3890, 4327],
-	GUIDES: [66, 69, 71, 99, 108, 111, 115, 2756, 3885, 3886, 5172],
+	GUIDES: [66, 69, 71, 99, 108, 111, 115, 2756, 3885, 3886, 3887, 5172],
 	REPORTS: [4301, 5815],
 	SHEETS: [5],
 } as const;
