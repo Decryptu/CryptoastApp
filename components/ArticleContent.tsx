@@ -88,9 +88,9 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 		},
 	);
 
-	// Handle strong tags while preserving link placeholders
-	text = text.replace(/<strong>(.*?)<\/strong>/g, (_, content) => {
-		// Check if this strong section contains any link placeholders
+	// Handle both strong and b tags while preserving link placeholders
+	text = text.replace(/<(strong|b)>(.*?)<\/\1>/g, (_, tag, content) => {
+		// Check if this bold section contains any link placeholders
 		const containsLink = Array.from(linkMap.keys()).some((placeholder) =>
 			content.includes(placeholder),
 		);
@@ -104,7 +104,6 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 				if (linkMap.has(part)) {
 					const linkSegment = linkMap.get(part);
 					if (linkSegment) {
-						// Safe null check
 						segmentGroup.push({
 							type: "link",
 							content: linkSegment.content,
@@ -112,7 +111,6 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 						});
 					}
 				} else if (part.trim()) {
-					// This is regular bold text
 					segmentGroup.push({
 						type: "bold",
 						content: part.trim(),
@@ -129,7 +127,7 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 		return "__BOLD__";
 	});
 
-	// Process remaining text and reconstruct final segments
+	// Rest of the function remains the same...
 	const parts = text.split(/((?:__BOLD__|__LINK\d+__|__BOLDGROUP__))/);
 	const finalSegments: TextSegment[] = [];
 	let segmentIndex = 0;
