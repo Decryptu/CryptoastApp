@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, TextInput, Pressable, FlatList } from "react-native";
+import {
+	View,
+	TextInput,
+	Pressable,
+	FlatList,
+	ActivityIndicator,
+	Text,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useColorScheme } from "react-native";
@@ -14,12 +21,15 @@ export default function SearchScreen() {
 	const [query, setQuery] = useState("");
 	const [articles, setArticles] = useState<Article[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [hasSearched, setHasSearched] = useState(false);
+	const [page, setPage] = useState(1);
+	const [hasMore, setHasMore] = useState(true);
 	const searchInputRef = useRef<TextInput>(null);
 	const router = useRouter();
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Focus input when screen mounts
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			searchInputRef.current?.focus();
@@ -28,34 +38,74 @@ export default function SearchScreen() {
 		return () => clearTimeout(timeoutId);
 	}, []);
 
-	const handleSearch = async () => {
+	const fetchArticles = async (pageNumber: number, isLoadingMore = false) => {
 		const trimmedQuery = query.trim();
 		if (!trimmedQuery) return;
 
-		setLoading(true);
+		if (pageNumber === 1) {
+			setLoading(true);
+		} else {
+			setLoadingMore(true);
+		}
+
 		try {
-			// Check cache first
-			const cachedResults = await getSearchCache(trimmedQuery);
-			if (cachedResults) {
-				setArticles(cachedResults);
-				setLoading(false);
-				return;
+			// Check cache only for first page
+			if (pageNumber === 1) {
+				const cachedResults = await getSearchCache(trimmedQuery);
+				if (cachedResults) {
+					setArticles(cachedResults);
+					setLoading(false);
+					setHasSearched(true);
+					return;
+				}
 			}
 
-			// Fetch from API if not in cache
 			const response = await fetch(
-				`https://cryptoast.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(trimmedQuery)}&page=1&per_page=10&_embed=true`,
+				`https://cryptoast.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(trimmedQuery)}&page=${pageNumber}&per_page=10&_embed=true`,
 			);
+
 			const data = await response.json();
 
-			// Update state and cache
-			setArticles(data);
-			await setSearchCache(trimmedQuery, data);
+			// Check if we have more pages
+			const totalPages = Number(response.headers.get("X-WP-TotalPages")) || 1;
+			setHasMore(pageNumber < totalPages);
+
+			if (isLoadingMore) {
+				setArticles((prev) => [...prev, ...data]);
+			} else {
+				setArticles(data);
+				// Only cache first page results
+				await setSearchCache(trimmedQuery, data);
+			}
 		} catch (error) {
 			console.error("🔴 Search error:", error);
+			setHasMore(false);
 		} finally {
 			setLoading(false);
+			setLoadingMore(false);
+			setHasSearched(true);
 		}
+	};
+
+	const handleSearch = () => {
+		if (!query.trim()) return;
+		setPage(1);
+		setHasMore(true);
+		setHasSearched(true);
+		void fetchArticles(1);
+	};
+
+	const handleLoadMore = () => {
+		// Only load more if:
+		// 1. We're not already loading more
+		// 2. There are more results to load
+		// 3. We have at least 10 results
+		// 4. We've performed a search
+		if (loadingMore || !hasMore || articles.length < 10 || !hasSearched) return;
+
+		const nextPage = page + 1;
+		setPage(nextPage);
+		void fetchArticles(nextPage, true);
 	};
 
 	const handleArticlePress = (article: Article) => {
@@ -64,7 +114,49 @@ export default function SearchScreen() {
 
 	const handleClearSearch = () => {
 		setQuery("");
+		setArticles([]);
+		setPage(1);
+		setHasMore(true);
+		setHasSearched(false);
 		searchInputRef.current?.focus();
+	};
+
+	const renderFooter = () => {
+		if (loadingMore) {
+			return (
+				<View className="py-4 flex-row justify-center">
+					<ActivityIndicator
+						size="large"
+						color={isDark ? colors.white : colors.black}
+					/>
+				</View>
+			);
+		}
+		return null;
+	};
+
+	const renderEmpty = () => {
+		if (loading) {
+			return (
+				<View className="space-y-4">
+					{Array.from({ length: 3 }).map(() => (
+						<ArticleSkeleton key={`skeleton-${Math.random()}`} />
+					))}
+				</View>
+			);
+		}
+
+		if (hasSearched && articles.length === 0) {
+			return (
+				<View className="p-4 items-center">
+					<Text className="text-zinc-600 dark:text-zinc-400 text-center text-lg">
+						Aucun résultat trouvé pour "{query}"
+					</Text>
+				</View>
+			);
+		}
+
+		return null;
 	};
 
 	return (
@@ -87,9 +179,9 @@ export default function SearchScreen() {
 						onChangeText={setQuery}
 						onSubmitEditing={handleSearch}
 						returnKeyType="search"
-						autoFocus={true} // Enable autoFocus
-						autoCorrect={false} // Disable autocorrect for better search experience
-						autoCapitalize="none" // Disable auto capitalization
+						autoFocus={true}
+						autoCorrect={false}
+						autoCapitalize="none"
 					/>
 					{query.length > 0 && (
 						<Pressable onPress={handleClearSearch}>
@@ -113,15 +205,10 @@ export default function SearchScreen() {
 					/>
 				)}
 				contentContainerClassName="p-4"
-				ListEmptyComponent={
-					loading ? (
-						<View className="space-y-4">
-							{Array.from({ length: 3 }).map((_, index) => (
-								<ArticleSkeleton key={`skeleton-${Math.random()}`} />
-							))}
-						</View>
-					) : null
-				}
+				ListEmptyComponent={renderEmpty}
+				ListFooterComponent={renderFooter}
+				onEndReached={handleLoadMore}
+				onEndReachedThreshold={0.5}
 			/>
 		</SafeAreaView>
 	);
