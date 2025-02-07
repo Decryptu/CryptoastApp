@@ -11,6 +11,7 @@ import ArticleImage from "../components/ArticleImage";
 import BlockQuote from "../components/BlockQuote";
 import InfoBlock from "./InfoBlock";
 import TableComponent from "./TableComponent";
+import ExternalButton from "./ExternalButton";
 
 interface ArticleContentProps {
 	content: string;
@@ -258,6 +259,26 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 					);
 				}
 
+				// Handle external "btn4" links
+				const btn4Match = section.match(
+					/<a[^>]*class="btn4"[^>]*href="([^"]*)"[^>]*>.*?<span[^>]*>(.*?)<\/span><\/a>/,
+				);
+				if (btn4Match) {
+					const [, url, text] = btn4Match;
+					const bgColor =
+						section.match(/background:[^;]*#([A-F0-9]{6})/i)?.[1] ?? "EC602A";
+
+					return (
+						<ExternalButton
+							key={sectionId}
+							url={url}
+							text={text}
+							bgColor={bgColor}
+							onPress={handleLinkPress}
+						/>
+					);
+				}
+
 				// Handle images
 				if (section.includes("<img")) {
 					return <ArticleImage key={sectionId} html={section} />;
@@ -338,29 +359,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 								</TouchableOpacity>
 							);
 						}
-					}
-
-					// Handle external "btn4" links
-					const btn4Match = section.match(
-						/<a[^>]*class="btn4"[^>]*href="([^"]*)"[^>]*>.*?<span[^>]*>(.*?)<\/span><\/a>/,
-					);
-					if (btn4Match) {
-						const [, url, text] = btn4Match;
-						const bgColor =
-							section.match(/background:[^;]*#([A-F0-9]{6})/i)?.[1] ?? "EC602A";
-
-						return (
-							<TouchableOpacity
-								key={sectionId}
-								onPress={() => handleLinkPress(url, "btn4")}
-								style={{ backgroundColor: `#${bgColor}` }}
-								className="p-4 my-3 rounded-lg"
-							>
-								<Text className="text-white text-center font-medium">
-									{text.replace(/<[^>]*>/g, "")}
-								</Text>
-							</TouchableOpacity>
-						);
 					}
 
 					// Process text segments for regular paragraphs
