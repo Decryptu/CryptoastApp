@@ -13,6 +13,7 @@ import InfoBlock from "./InfoBlock";
 import TableComponent from "./TableComponent";
 import ExternalButton from "./ExternalButton";
 import ListComponent from "./ListComponent";
+import YasrRating from "./YasrRating";
 
 interface ArticleContentProps {
 	content: string;
@@ -320,6 +321,37 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 							key={sectionId}
 							html={section}
 							ordered={section.startsWith("<ol")}
+						/>
+					);
+				}
+
+				// Handle Yasr rating
+				if (section.includes("yasr-overall-rating")) {
+					// Extract rating value
+					const ratingMatch = section.match(/data-rating='([0-9.]+)'/);
+					const rating = ratingMatch ? Number.parseFloat(ratingMatch[1]) : 0;
+
+					// Extract custom text if present
+					const customTextMatch = section.match(
+						/yasr-custom-text-before-overall[^>]*>(.*?)<\/div>/,
+					);
+					const customText = customTextMatch
+						? customTextMatch[1]
+						: "Notre note";
+
+					// Extract star size if present
+					const starSizeMatch = section.match(/data-rater-starsize='([0-9]+)'/);
+					const starSize = starSizeMatch
+						? Number.parseInt(starSizeMatch[1], 10)
+						: 32;
+
+					return (
+						<YasrRating
+							key={sectionId}
+							rating={rating}
+							label={customText}
+							starSize={starSize}
+							showRatingText={false}
 						/>
 					);
 				}
