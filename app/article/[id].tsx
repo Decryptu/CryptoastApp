@@ -10,13 +10,13 @@ import {
 	Text,
 	Image,
 	ScrollView,
-	ActivityIndicator,
 	Share,
 	TouchableOpacity,
-	Platform,
 	Dimensions,
-	useColorScheme,
+	Animated,
 	RefreshControl,
+	type NativeSyntheticEvent,
+	type NativeScrollEvent,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { fetchArticle } from "../../services/api";
@@ -26,14 +26,18 @@ import type { Article } from "../../types/article";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArticleContent } from "../../components/ArticleContent";
+import { ArticleContentSkeleton } from "../../components/ArticleContentSkeleton"; // Import the skeleton component
 import colors from "tailwindcss/colors";
 import { useScrollToTop } from "../../hooks/useScrollToTop";
-import { Animated } from "react-native";
 import { ScrollToTopButton } from "../../components/ScrollToTopButton";
-import type { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
+import { ArticleModal } from "../../components/ArticleModal";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
+// Extracts the article slug from a given URL.
+const extractArticleSlug = (url: string): string | null => {
+	const cleanUrl = url.replace(/\/$/, "");
+	const slug = cleanUrl.split("/").pop();
+	return slug ?? null;
+};
 
 export default function ArticleScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,21 +46,22 @@ export default function ArticleScreen() {
 	const [refreshing, setRefreshing] = useState(false);
 	const [imageError, setImageError] = useState(false);
 	const insets = useSafeAreaInsets();
-	const colorScheme = useColorScheme();
-	const isDark = colorScheme === "dark";
 	const scrollViewRef = useRef<ScrollView>(null);
 	const scrollY = useRef(new Animated.Value(0)).current;
 	const showScrollButton = useRef(new Animated.Value(0)).current;
 
-	// Use the custom hook to scroll to top when the article ID changes
+	// Modal state for handling internal links.
+	const [modalVisible, setModalVisible] = useState(false);
+	const [modalArticleId, setModalArticleId] = useState<number | null>(null);
+
+	// Custom hook to scroll to top on article change.
 	useScrollToTop(scrollViewRef, id);
 
+	// Load article data from cache or via API.
 	const loadArticle = useCallback(
 		async (forceRefresh = false) => {
 			try {
 				const articleId = Number(id);
-
-				// Try to get cached article first
 				if (!forceRefresh) {
 					const cachedArticle = await getArticleCache(articleId);
 					if (cachedArticle) {
@@ -65,12 +70,8 @@ export default function ArticleScreen() {
 						return;
 					}
 				}
-
-				// Fetch fresh article
 				const data = await fetchArticle(articleId);
 				setArticle(data);
-
-				// Cache the new article
 				await setArticleCache(articleId, data);
 			} catch (error) {
 				console.error("Failed to load article:", error);
@@ -85,12 +86,14 @@ export default function ArticleScreen() {
 		void loadArticle();
 	}, [loadArticle]);
 
+	// Handle pull-to-refresh.
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
 		await loadArticle(true);
 		setRefreshing(false);
 	}, [loadArticle]);
 
+	// Handle sharing the article.
 	const handleShare = async () => {
 		if (!article) return;
 		try {
@@ -103,6 +106,7 @@ export default function ArticleScreen() {
 		}
 	};
 
+	// Format the article date.
 	const formattedDate = useMemo(() => {
 		if (!article?.date) return "";
 		const date = new Date(article.date);
@@ -115,34 +119,38 @@ export default function ArticleScreen() {
 		}).format(date);
 	}, [article?.date]);
 
-	if (loading) {
-		return (
-			<View className="flex-1 justify-center items-center bg-white dark:bg-zinc-900">
-				<ActivityIndicator
-					size="large"
-					color={isDark ? colors.white : colors.black}
-				/>
-			</View>
-		);
-	}
+	// Determine image URL.
+	const imageUrl =
+		!imageError && article
+			? article.yoast_head_json?.og_image?.[0]?.url ||
+				article.schema?.["@graph"]?.[0]?.thumbnailUrl ||
+				article._embedded?.["wp:featuredmedia"]?.[0]?.source_url
+			: null;
 
-	if (!article) return null;
+	// Callback to handle internal links using modal.
+	const handleInternalLinkPress = useCallback(
+		async (url: string, className?: string) => {
+			const slug = extractArticleSlug(url);
+			if (slug) {
+				try {
+					const response = await fetch(
+						`https://cryptoast.fr/wp-json/wp/v2/posts?slug=${slug}`,
+					);
+					const articles = await response.json();
+					if (articles && articles.length > 0) {
+						const articleId = articles[0].id;
+						setModalArticleId(articleId);
+						setModalVisible(true);
+					}
+				} catch (error) {
+					console.error("Error fetching article by slug:", error);
+				}
+			}
+		},
+		[],
+	);
 
-	const imageUrl = !imageError
-		? article.yoast_head_json?.og_image?.[0]?.url ||
-			article.schema?.["@graph"]?.[0]?.thumbnailUrl ||
-			article._embedded?.["wp:featuredmedia"]?.[0]?.source_url
-		: null;
-
-	const excerpt = article.excerpt.rendered.replace(/<[^>]*>/g, "");
-	const authorName =
-		article.yoast_head_json?.author || article._embedded?.author?.[0]?.name;
-	const readingTime =
-		article.yoast_head_json?.twitter_misc?.["Durée de lecture estimée"];
-
-	const headerHeight =
-		Platform.OS === "ios" ? insets.top + 24 : insets.top + 36;
-
+	// Handle scroll events to show/hide the scroll-to-top button.
 	const handleScroll = Animated.event(
 		[{ nativeEvent: { contentOffset: { y: scrollY } } }],
 		{
@@ -168,6 +176,43 @@ export default function ArticleScreen() {
 		scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 	};
 
+	// While the article is loading, render the skeleton screen.
+	if (loading) {
+		console.log("Article is loading... rendering skeleton screen");
+		return (
+			<View className="flex-1 bg-white dark:bg-zinc-900">
+				<ScrollView
+					ref={scrollViewRef}
+					refreshControl={
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={handleRefresh}
+							tintColor={colors.white}
+						/>
+					}
+				>
+					{/* You can optionally render a skeleton header here if available */}
+					<ArticleHeader />
+					<View className="p-4">
+						{/* Render the content skeleton which mimics the article layout */}
+						<ArticleContentSkeleton />
+					</View>
+				</ScrollView>
+				<ScrollToTopButton visible={showScrollButton} onPress={scrollToTop} />
+			</View>
+		);
+	}
+
+	// If no article is found (after loading), return null.
+	if (!article) return null;
+
+	const IMAGE_HEIGHT = Dimensions.get("window").width / 2;
+	const excerpt = article.excerpt.rendered.replace(/<[^>]*>/g, "");
+	const authorName =
+		article.yoast_head_json?.author || article._embedded?.author?.[0]?.name;
+	const readingTime =
+		article.yoast_head_json?.twitter_misc?.["Durée de lecture estimée"];
+
 	return (
 		<View className="flex-1 bg-white dark:bg-zinc-900">
 			<ScrollView
@@ -177,7 +222,7 @@ export default function ArticleScreen() {
 					<RefreshControl
 						refreshing={refreshing}
 						onRefresh={handleRefresh}
-						tintColor={isDark ? colors.white : colors.black}
+						tintColor={colors.white}
 					/>
 				}
 				onScroll={handleScroll}
@@ -188,10 +233,9 @@ export default function ArticleScreen() {
 					<Text className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
 						{article.title.rendered.replace(/<[^>]*>/g, "")}
 					</Text>
-					<Text className="text-lg text-zinc-600 dark:text-zinc-300 italic">
+					<Text className="text-lg text-zinc-600 dark:text-zinc-300 italic mb-4">
 						{excerpt}
 					</Text>
-
 					<View className="flex-row justify-between items-center mb-6">
 						<View className="flex-1">
 							{authorName && (
@@ -205,16 +249,11 @@ export default function ArticleScreen() {
 							</Text>
 						</View>
 						<TouchableOpacity onPress={handleShare} className="ml-4">
-							<Feather
-								name="share-2"
-								size={24}
-								color={isDark ? colors.zinc[400] : colors.zinc[600]}
-							/>
+							<Feather name="share-2" size={24} color={colors.zinc[600]} />
 						</TouchableOpacity>
 					</View>
-
 					{imageUrl && (
-						<View className="rounded-lg overflow-hidden">
+						<View className="rounded-lg overflow-hidden mb-6">
 							<Image
 								source={{ uri: imageUrl }}
 								className="w-full"
@@ -224,12 +263,21 @@ export default function ArticleScreen() {
 							/>
 						</View>
 					)}
-
-					<ArticleContent content={article.content.rendered} />
+					<ArticleContent
+						content={article.content.rendered}
+						onInternalLinkPress={handleInternalLinkPress}
+					/>
 				</View>
 			</ScrollView>
-
 			<ScrollToTopButton visible={showScrollButton} onPress={scrollToTop} />
+			{modalVisible && modalArticleId !== null && (
+				<ArticleModal
+					articleId={modalArticleId}
+					visible={modalVisible}
+					onClose={() => setModalVisible(false)}
+					onInternalLinkPress={handleInternalLinkPress}
+				/>
+			)}
 		</View>
 	);
 }

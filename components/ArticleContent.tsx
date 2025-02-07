@@ -17,7 +17,7 @@ import YasrRating from "./YasrRating";
 
 interface ArticleContentProps {
 	content: string;
-	onInternalLinkPress?: (url: string) => void;
+	onInternalLinkPress?: (url: string, className?: string) => void;
 }
 
 interface TextSegment {
@@ -196,7 +196,10 @@ const extractInfoBlock = (html: string) => {
 	};
 };
 
-export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
+export const ArticleContent: FC<ArticleContentProps> = ({
+	content,
+	onInternalLinkPress,
+}) => {
 	const router = useRouter();
 	const { width: screenWidth } = useWindowDimensions();
 
@@ -207,12 +210,16 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 
 	const handleLinkPress = useCallback(
 		async (url: string, className?: string) => {
-			console.log("Link pressed:", { url, className });
 
 			if (isInternalLink(url, className)) {
+				// If a custom internal link handler is provided, call it.
+				if (onInternalLinkPress) {
+					onInternalLinkPress(url, className);
+					return;
+				}
+				// Fallback: use the existing behavior if no callback is provided.
 				const slug = extractArticleSlug(url);
 				if (slug) {
-					console.log("Fetching article by slug:", slug);
 					try {
 						const response = await fetch(
 							`https://cryptoast.fr/wp-json/wp/v2/posts?slug=${slug}`,
@@ -221,19 +228,17 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 
 						if (articles && articles.length > 0) {
 							const articleId = articles[0].id;
-							console.log("Navigating to article:", articleId);
 							router.push(`/article/${articleId}`);
 						}
 					} catch (error) {
-						console.error("Error fetching article:", error);
+						console.error("ArticleContent: error fetching article:", error);
 					}
 				}
 			} else {
-				console.log("Opening external link:", url);
 				await Linking.openURL(url);
 			}
 		},
-		[router],
+		[router, onInternalLinkPress],
 	);
 
 	const processedContent = useMemo(() => {
