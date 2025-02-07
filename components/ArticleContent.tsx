@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import ArticleImage from "../components/ArticleImage";
 import BlockQuote from "../components/BlockQuote";
 import InfoBlock from "./InfoBlock";
+import TableComponent from "./TableComponent";
 
 interface ArticleContentProps {
 	content: string;
@@ -217,13 +218,14 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 
 		// Split content into sections
 		const sections = cleanContent.split(
-			/(<h[1-4][^>]*>.*?<\/h[1-4]>|<p[^>]*>.*?<\/p>|<blockquote[^>]*>.*?<\/blockquote>)/gs,
+			/(<h[1-4][^>]*>.*?<\/h[1-4]>|<p[^>]*>.*?<\/p>|<blockquote[^>]*>.*?<\/blockquote>|<div\s+class="su-table[^>]*>[\s\S]*?<\/div>)/gs,
 		);
 
 		return sections
 			.map((section) => {
 				if (!section.trim()) return null;
 				const sectionId = generateId();
+
 				// Handle blockquotes
 				if (section.startsWith("<blockquote")) {
 					return (
@@ -237,6 +239,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 						/>
 					);
 				}
+
+				// Handle tables
+				if (section.includes("su-table")) {
+					return <TableComponent key={sectionId} html={section} />;
+				}
+
 				// Handle info blocks
 				if (section.includes("tuto-guide-block")) {
 					const { title, content, blockType } = extractInfoBlock(section);
@@ -249,6 +257,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 						/>
 					);
 				}
+
 				// Handle images
 				if (section.includes("<img")) {
 					return <ArticleImage key={sectionId} html={section} />;
