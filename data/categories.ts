@@ -34,7 +34,7 @@ export const categories: Category[] = [
 				id: 95,
 			},
 			{
-				name: "Actualité des NFT",
+				name: "NFT",
 				id: 1877,
 			},
 			{
