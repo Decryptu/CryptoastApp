@@ -12,6 +12,7 @@ import BlockQuote from "../components/BlockQuote";
 import InfoBlock from "./InfoBlock";
 import TableComponent from "./TableComponent";
 import ExternalButton from "./ExternalButton";
+import ListComponent from "./ListComponent";
 
 interface ArticleContentProps {
 	content: string;
@@ -219,7 +220,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 
 		// Split content into sections
 		const sections = cleanContent.split(
-			/(<h[1-4][^>]*>.*?<\/h[1-4]>|<p[^>]*>.*?<\/p>|<blockquote[^>]*>.*?<\/blockquote>|<div\s+class="su-table[^>]*>[\s\S]*?<\/div>)/gs,
+			/(<h[1-4][^>]*>.*?<\/h[1-4]>|<p[^>]*>.*?<\/p>|<blockquote[^>]*>.*?<\/blockquote>|<div\s+class="su-table[^>]*>[\s\S]*?<\/div>|<[uo]l[^>]*>.*?<\/[uo]l>)/gs,
 		);
 
 		return sections
@@ -275,6 +276,17 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 							text={text}
 							bgColor={bgColor}
 							onPress={handleLinkPress}
+						/>
+					);
+				}
+
+				// Handle lists
+				if (section.startsWith("<ul") || section.startsWith("<ol")) {
+					return (
+						<ListComponent
+							key={sectionId}
+							html={section}
+							ordered={section.startsWith("<ol")}
 						/>
 					);
 				}
