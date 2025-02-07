@@ -9,6 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import ArticleImage from "../components/ArticleImage";
 import BlockQuote from "../components/BlockQuote";
+import InfoBlock from "./InfoBlock";
 
 interface ArticleContentProps {
 	content: string;
@@ -151,6 +152,18 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 	return finalSegments;
 };
 
+const extractInfoBlock = (html: string) => {
+	const titleMatch = html.match(/<span class="title">(.*?)<\/span>/);
+	const contentMatch = html.match(/<div>(.*?)<\/div>/);
+	const blockTypeMatch = html.match(/tuto-guide-block\s+(\w+)-block/);
+
+	return {
+		title: titleMatch?.[1]?.trim() ?? "",
+		content: contentMatch?.[1]?.trim() ?? "",
+		blockType: (blockTypeMatch?.[1] as "aim" | "info" | "warning") ?? "info",
+	};
+};
+
 export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 	const router = useRouter();
 	const { width: screenWidth } = useWindowDimensions();
@@ -221,6 +234,18 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 							processTextSegments={processTextSegments}
 							handleLinkPress={handleLinkPress}
 							isInternalLink={isInternalLink}
+						/>
+					);
+				}
+				// Handle info blocks
+				if (section.includes("tuto-guide-block")) {
+					const { title, content, blockType } = extractInfoBlock(section);
+					return (
+						<InfoBlock
+							key={sectionId}
+							title={title}
+							content={content}
+							blockType={blockType}
 						/>
 					);
 				}
