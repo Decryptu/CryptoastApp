@@ -1,5 +1,12 @@
-import { type FC, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, Linking } from "react-native";
+import { type FC, useMemo, useCallback, useState } from "react";
+import {
+	View,
+	Text,
+	TouchableOpacity,
+	Linking,
+	Image,
+	useWindowDimensions,
+} from "react-native";
 import { useRouter } from "expo-router";
 
 interface ArticleContentProps {
@@ -14,6 +21,12 @@ interface TextSegment {
 		url: string;
 		className?: string;
 	};
+}
+
+interface ImageDimensions {
+	width: number;
+	height: number;
+	aspectRatio: number;
 }
 
 /**
@@ -45,6 +58,33 @@ const isInternalLink = (url: string, className?: string): boolean => {
 const createIdGenerator = () => {
 	let counter = 0;
 	return () => `section-${counter++}`;
+};
+
+/**
+ * Extracts image dimensions from HTML attributes
+ */
+const extractImageDimensions = (html: string): ImageDimensions | null => {
+	const widthMatch = html.match(/width="(\d+)"/);
+	const heightMatch = html.match(/height="(\d+)"/);
+
+	if (widthMatch && heightMatch) {
+		const width = Number.parseInt(widthMatch[1], 10);
+		const height = Number.parseInt(heightMatch[1], 10);
+		return {
+			width,
+			height,
+			aspectRatio: width / height,
+		};
+	}
+	return null;
+};
+
+/**
+ * Extracts image source URL from HTML
+ */
+const extractImageSrc = (html: string): string | null => {
+	const match = html.match(/src="([^"]+)"/);
+	return match ? match[1] : null;
 };
 
 /**
@@ -145,6 +185,12 @@ const processTextSegments = (rawText: string): TextSegment[] => {
 
 export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 	const router = useRouter();
+	const { width: screenWidth } = useWindowDimensions();
+	const [imageLoadErrors, setImageLoadErrors] = useState<Set<string>>(new Set());
+	
+	// Calculate content width (subtract padding/margins)
+	const contentWidth = screenWidth - 32; // Adjust based on your layout's padding
+	
 	const generateId = useMemo(() => createIdGenerator(), []);
 
 	const handleLinkPress = useCallback(
@@ -198,7 +244,39 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				if (!section.trim()) return null;
 				const sectionId = generateId();
 
-				// Handle blockquotes
+				// Handle images
+				if (section.includes("<img")) {
+					const src = extractImageSrc(section);
+					const dimensions = extractImageDimensions(section);
+
+					if (!src || imageLoadErrors.has(src)) return null;
+
+					let imageHeight: number;
+					if (dimensions) {
+						imageHeight = contentWidth / dimensions.aspectRatio;
+					} else {
+						// Default aspect ratio if dimensions are not provided
+						imageHeight = contentWidth * 0.75;
+					}
+
+					return (
+						<View key={sectionId} className="my-4">
+							<Image
+								source={{ uri: src }}
+								style={{
+									width: contentWidth,
+									height: imageHeight,
+								}}
+								resizeMode="cover"
+								onError={() => {
+									console.log(`Failed to load image: ${src}`);
+									setImageLoadErrors((prev) => new Set(prev).add(src));
+								}}
+								className="rounded-lg"
+							/>
+						</View>
+					);
+				}
 				// Handle blockquotes
 				if (section.startsWith("<blockquote")) {
 					let citation = "";
@@ -430,7 +508,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 				return null;
 			})
 			.filter(Boolean);
-	}, [content, generateId, handleLinkPress]);
+	}, [content, generateId, handleLinkPress, contentWidth, imageLoadErrors]);
 
 	return <View className="pb-8">{processedContent}</View>;
 };
