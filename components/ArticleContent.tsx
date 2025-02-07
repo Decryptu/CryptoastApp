@@ -198,7 +198,6 @@ const extractInfoBlock = (html: string) => {
 export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 	const router = useRouter();
 	const { width: screenWidth } = useWindowDimensions();
-	const [imageLoadErrors] = useState<Set<string>>(new Set());
 
 	// Calculate content width (subtract padding/margins)
 	const contentWidth = screenWidth - 32; // Adjust based on your layout's padding
