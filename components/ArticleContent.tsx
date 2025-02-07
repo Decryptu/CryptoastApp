@@ -40,6 +40,29 @@ const extractArticleSlug = (url: string): string | null => {
 };
 
 /**
+ * HTML entity decoding
+ */
+const decodeHTMLEntities = (text: string): string => {
+	return text
+		.replace(/&nbsp;/g, " ")
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#039;/g, "'")
+		.replace(/&#39;/g, "'")
+		.replace(/&rsquo;/g, "'")
+		.replace(/&ldquo;/g, '"')
+		.replace(/&rdquo;/g, '"')
+		.replace(/&hellip;/g, "...")
+		.replace(/&mdash;/g, "—")
+		.replace(/&ndash;/g, "–")
+		.replace(/&trade;/g, "™")
+		.replace(/&copy;/g, "©")
+		.replace(/&reg;/g, "®");
+};
+
+/**
  * Checks if a link is internal
  */
 const isInternalLink = (url: string, className?: string): boolean => {
@@ -63,12 +86,19 @@ const createIdGenerator = () => {
  * Process text to handle bold, italic, and links
  */
 const processTextSegments = (rawText: string): TextSegment[] => {
-	// First clean up any p tags and transform em tags
+	// First clean up any p tags and transform em and i tags
 	let text = rawText.replace(/<\/?p[^>]*>/g, "");
 
-	// Preserve em content but remove tags
+	// Remove i tags but keep their content
+	text = text.replace(/<i>(.*?)<\/i>/g, "$1");
+
+	// Remove em tags but keep their content
 	text = text.replace(/<em>(.*?)<\/em>/g, "$1");
 
+	// Decode HTML entities
+	text = decodeHTMLEntities(text);
+
+	// Rest of the function remains the same...
 	const segments: TextSegment[] = [];
 	const linkMap = new Map<string, TextSegment>();
 	let linkCounter = 0;
@@ -214,7 +244,13 @@ export const ArticleContent: FC<ArticleContentProps> = ({ content }) => {
 			.replace(
 				/<blockquote\s+class="twitter-tweet"[^>]*>.*?<\/blockquote>/gs,
 				"",
-			);
+			)
+			// Remove i tags but keep their content
+			.replace(/<i>(.*?)<\/i>/g, "$1")
+			// Decode HTML entities
+			.split(/(<[^>]*>)/)
+			.map((part) => (!part.startsWith("<") ? decodeHTMLEntities(part) : part))
+			.join("");
 
 		// Split content into sections
 		const sections = cleanContent.split(
