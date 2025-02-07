@@ -1,4 +1,48 @@
 // Common properties shared between posts and pages
+interface SchemaGraph {
+	"@type": string;
+	"@id": string;
+	isPartOf?: {
+		"@id": string;
+	};
+	author?: {
+		name: string;
+		"@id": string;
+	};
+	headline?: string;
+	datePublished?: string;
+	dateModified?: string;
+	mainEntityOfPage?: {
+		"@id": string;
+	};
+	wordCount?: number;
+	commentCount?: number;
+	publisher?: {
+		"@id": string;
+	};
+	image?: {
+		"@id": string;
+	};
+	thumbnailUrl?: string;
+	keywords?: string[];
+	articleSection?: string[];
+	inLanguage?: string;
+	potentialAction?: Array<{
+		"@type": string;
+		name?: string;
+		target?: string[];
+	}>;
+	copyrightYear?: string;
+	copyrightHolder?: {
+		"@id": string;
+	};
+}
+
+interface Schema {
+	"@context": string;
+	"@graph": SchemaGraph[];
+}
+
 interface BaseArticle {
 	id: number;
 	date: string;
@@ -10,7 +54,7 @@ interface BaseArticle {
 	modified_gmt: string;
 	slug: string;
 	status: string;
-	type: "post" | "page"; // Explicitly define possible types
+	type: "post" | "page";
 	link: string;
 	title: {
 		rendered: string;
@@ -28,6 +72,7 @@ interface BaseArticle {
 	comment_status: string;
 	ping_status: string;
 	template: string;
+	schema?: Schema;
 	meta: {
 		yasr_overall_rating: number;
 		yasr_post_is_review: string;
@@ -106,34 +151,28 @@ export interface Author {
 	};
 }
 
-// Post-specific interface
 export interface Post extends BaseArticle {
 	type: "post";
 	sticky: boolean;
 	format: string;
 }
 
-// Page-specific interface
 export interface Page extends BaseArticle {
 	type: "page";
 	parent: number;
 	menu_order: number;
 }
 
-// Union type to handle both posts and pages
 export type Article = Post | Page;
 
-// Type guard to check if article is a post
 export function isPost(article: Article): article is Post {
 	return article.type === "post";
 }
 
-// Type guard to check if article is a page
 export function isPage(article: Article): article is Page {
 	return article.type === "page";
 }
 
-// Type for blockquote
 export interface TextSegment {
 	type: "text" | "bold" | "italic" | "link";
 	content: string;
