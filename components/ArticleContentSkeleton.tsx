@@ -20,30 +20,30 @@ export const ArticleContentSkeleton = () => {
 
 			{/* Article content placeholder */}
 			<View className="space-y-3 mb-4">
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
 			</View>
 			{/* Article content placeholder */}
 			<View className="space-y-3 mb-4">
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
 			</View>
 			{/* Article content placeholder */}
 			<View className="space-y-3 mb-4">
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
-				<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-11/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-10/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-9/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-8/12" />
+				<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-7/12" />
 			</View>
 		</View>
 	);
