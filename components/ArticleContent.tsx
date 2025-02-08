@@ -6,10 +6,11 @@ import {
 	useColorScheme,
 	type GestureResponderEvent,
 } from "react-native";
-import RenderHTML from "@builder.io/react-native-render-html";
+import RenderHTML, {
+	type MixedStyleDeclaration,
+} from "@builder.io/react-native-render-html";
 import colors from "tailwindcss/colors";
 
-// Define the props for ArticleContent
 interface ArticleContentProps {
 	content: string;
 	onInternalLinkPress?: (url: string, className?: string) => void;
@@ -19,36 +20,28 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	content,
 	onInternalLinkPress,
 }) => {
-	// Get current screen dimensions and color scheme
 	const { width: screenWidth } = useWindowDimensions();
 	const contentWidth = screenWidth - 32;
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	/**
-	 * Handle link press events
-	 */
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			if (!href) return;
 
-			// Check if the link is internal
 			if (
 				href.includes("cryptoast.fr") &&
 				!href.includes("/go-") &&
 				!href.includes("/cours-")
 			) {
-				// Always use the modal for internal links
 				onInternalLinkPress?.(href);
 			} else {
-				// Open external links in browser
 				await Linking.openURL(href);
 			}
 		},
 		[onInternalLinkPress],
 	);
 
-	// Define color schemes based on the current theme
 	const themeColors = {
 		text: isDark ? colors.zinc[100] : colors.zinc[900],
 		link: isDark ? colors.amber[400] : colors.amber[600],
@@ -56,19 +49,34 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		blockquoteText: isDark ? colors.zinc[300] : colors.zinc[600],
 	};
 
+	const imageStyle: MixedStyleDeclaration = {
+		alignSelf: "center",
+		marginVertical: 8,
+		borderRadius: 8,
+		objectFit: "contain",
+	};
+
 	return (
-		<View style={{ flex: 1 }}>
+		<View className="flex-1">
 			<RenderHTML
 				contentWidth={contentWidth}
 				source={{ html: content }}
+				enableExperimentalBRCollapsing
+				enableExperimentalGhostLinesPrevention
 				renderersProps={{
 					a: { onPress: handleLinkPress },
+					img: {
+						enableExperimentalPercentWidth: true,
+						initialDimensions: {
+							width: contentWidth,
+							height: 200,
+						},
+					},
 				}}
-				// Base style with theme-aware text color
 				baseStyle={{
 					color: themeColors.text,
+					fontSize: 16,
 				}}
-				// Theme-aware styles for HTML tags
 				tagsStyles={{
 					h1: {
 						fontSize: 32,
@@ -113,19 +121,28 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						borderLeftColor: themeColors.blockquoteBorder,
 						color: themeColors.blockquoteText,
 					},
-					img: {
-						maxWidth: contentWidth - 32,
-						height: "auto",
+					img: imageStyle,
+					figure: {
+						marginVertical: 8,
+						alignSelf: "center",
 					},
-					// Add any other HTML elements you need to style
+					figcaption: {
+						fontSize: 14,
+						color: themeColors.blockquoteText,
+						textAlign: "center",
+						marginTop: 4,
+					},
 					ul: {
 						color: themeColors.text,
+						marginLeft: 16,
 					},
 					ol: {
 						color: themeColors.text,
+						marginLeft: 16,
 					},
 					li: {
 						color: themeColors.text,
+						marginVertical: 2,
 					},
 				}}
 			/>
