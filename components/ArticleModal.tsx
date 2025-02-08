@@ -10,6 +10,7 @@ import {
 	Share,
 	Platform,
 	Dimensions,
+	useColorScheme,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,6 +41,8 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 	const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } =
 		Dimensions.get("window");
 	const IMAGE_HEIGHT = SCREEN_WIDTH / 2;
+	const colorScheme = useColorScheme();
+	const isDark = colorScheme === "dark";
 
 	useEffect(() => {
 		if (visible) {
@@ -95,6 +98,11 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 		}
 	};
 
+	// Fix the TypeScript error for the event parameter in handleLinkPress
+	const handleLinkPress = (event: unknown, href?: string) => {
+		onInternalLinkPress?.(href ?? "", "");
+	};
+
 	return (
 		<Modal
 			visible={visible}
@@ -104,13 +112,19 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 		>
 			<View className="flex-1 bg-black/30">
 				<View
-					className="absolute bottom-0 left-2.5 right-2.5 bg-white rounded-t-xl shadow-lg"
+					className={`absolute bottom-0 left-2.5 right-2.5 ${
+						isDark ? "bg-zinc-900" : "bg-white"
+					} rounded-t-xl shadow-lg`}
 					style={{ height: SCREEN_HEIGHT * 0.9 }}
 				>
-					{/* Modal Header (no extra top padding) */}
+					{/* Modal Header */}
 					<View className="items-end p-2.5">
 						<TouchableOpacity onPress={onClose} className="p-1">
-							<Feather name="x" size={24} color={colors.zinc[600]} />
+							<Feather
+								name="x"
+								size={24}
+								color={isDark ? colors.zinc[400] : colors.zinc[600]}
+							/>
 						</TouchableOpacity>
 					</View>
 					{/* Modal Content */}
@@ -126,20 +140,36 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 							<View className="mt-2">
 								{/* Meta Information */}
 								<View className="mb-4">
-									<Text className="text-2xl font-bold text-zinc-900 mb-2">
+									<Text
+										className={`text-2xl font-bold ${
+											isDark ? "text-white" : "text-zinc-900"
+										} mb-2`}
+									>
 										{article.title.rendered.replace(/<[^>]*>/g, "")}
 									</Text>
-									<Text className="text-base text-zinc-600 italic mb-2">
+									<Text
+										className={`text-base ${
+											isDark ? "text-zinc-300" : "text-zinc-600"
+										} italic mb-2`}
+									>
 										{excerpt}
 									</Text>
 									<View className="flex-row justify-between items-center mb-2">
 										<View className="flex-1">
 											{authorName && (
-												<Text className="text-sm text-zinc-600 mb-1">
+												<Text
+													className={`text-sm ${
+														isDark ? "text-zinc-400" : "text-zinc-600"
+													} mb-1`}
+												>
 													Par {authorName}
 												</Text>
 											)}
-											<Text className="text-sm text-zinc-500">
+											<Text
+												className={`text-sm ${
+													isDark ? "text-zinc-500" : "text-zinc-500"
+												}`}
+											>
 												{formattedDate}
 												{readingTime && ` • ${readingTime}`}
 											</Text>
@@ -148,7 +178,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 											<Feather
 												name="share-2"
 												size={24}
-												color={colors.zinc[600]}
+												color={isDark ? colors.zinc[400] : colors.zinc[600]}
 											/>
 										</TouchableOpacity>
 									</View>
@@ -170,7 +200,11 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
 								/>
 							</View>
 						) : (
-							<Text className="text-center text-red-500 text-base mt-5">
+							<Text
+								className={`text-center ${
+									isDark ? "text-red-400" : "text-red-500"
+								} text-base mt-5`}
+							>
 								Article not found.
 							</Text>
 						)}
