@@ -30,6 +30,15 @@
     "scheme": "your-app-scheme",
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "3e71b3af-7f58-495e-b3c3-519c690b2955"
+      }
+    },
+    "owner": "decryptu"
   }
 }
