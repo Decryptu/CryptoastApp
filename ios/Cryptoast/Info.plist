@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>your-app-scheme</string>
-          <string>com.anonymous.Cryptoast</string>
+          <string>com.cryptoast.newsapp</string>
         </array>
       </dict>
     </array>
