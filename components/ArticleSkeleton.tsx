@@ -12,14 +12,14 @@ export const ArticleSkeleton = () => {
 
 				{/* Content placeholder */}
 				<View className="space-y-2">
-					<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
-					<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6" />
+					<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
+					<View className="h-4 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6" />
 					<View className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-4/6" />
 				</View>
 
 				{/* Footer placeholder */}
 				<View className="flex-row justify-between items-center mt-4">
-					<View className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-24" />
+					<View className="h-3 mb-2 bg-zinc-200 dark:bg-zinc-700 rounded w-24" />
 					<View className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-32" />
 				</View>
 			</View>

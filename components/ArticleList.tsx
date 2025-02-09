@@ -5,9 +5,10 @@ import {
 	RefreshControl,
 	ActivityIndicator,
 	useColorScheme,
+	useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import Animated from "react-native-reanimated";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { ArticleCard } from "./ArticleCard";
 import { ArticleSkeleton } from "./ArticleSkeleton";
@@ -28,6 +29,8 @@ interface ArticleListProps {
 	animatedStyle: ReanimatedStyle;
 }
 
+const NUM_SKELETONS = 3;
+
 export function ArticleList({
 	articles,
 	loading,
@@ -42,6 +45,7 @@ export function ArticleList({
 	const router = useRouter();
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
+	const { width } = useWindowDimensions();
 
 	const handleArticlePress = useCallback(
 		(article: Article) => {
@@ -68,16 +72,45 @@ export function ArticleList({
 
 	const renderSkeletons = (
 		<FlatList
-			data={[1, 2, 3]}
-			keyExtractor={(item) => item.toString()}
+			data={Array(NUM_SKELETONS).fill(0)}
+			keyExtractor={(_, index) => index.toString()}
 			renderItem={() => <ArticleSkeleton />}
 			contentContainerClassName="p-4"
 		/>
 	);
 
+	// Side skeleton styles to position them absolutely
+	const leftSkeletonStyle = useAnimatedStyle(() => ({
+		position: "absolute",
+		left: -width,
+		width,
+		height: "100%",
+		opacity: 0.5,
+	}));
+
+	const rightSkeletonStyle = useAnimatedStyle(() => ({
+		position: "absolute",
+		right: -width,
+		width,
+		height: "100%",
+		opacity: 0.5,
+	}));
+
 	const renderContent = (
 		<GestureDetector gesture={panGesture}>
 			<Animated.View style={animatedStyle} className="flex-1">
+				{/* Left side skeletons */}
+				<Animated.View style={leftSkeletonStyle}>
+					<FlatList
+						data={Array(NUM_SKELETONS).fill(0)}
+						keyExtractor={(_, index) => `left-${index}`}
+						renderItem={() => <ArticleSkeleton />}
+						contentContainerClassName="p-4"
+						scrollEnabled={false}
+					/>
+				</Animated.View>
+
+				{/* Main content */}
 				<FlatList
 					ref={tabScrollRefs[section.toLowerCase()]}
 					data={articles}
@@ -100,6 +133,17 @@ export function ArticleList({
 					onEndReachedThreshold={0.5}
 					ListFooterComponent={renderFooter}
 				/>
+
+				{/* Right side skeletons */}
+				<Animated.View style={rightSkeletonStyle}>
+					<FlatList
+						data={Array(NUM_SKELETONS).fill(0)}
+						keyExtractor={(_, index) => `right-${index}`}
+						renderItem={() => <ArticleSkeleton />}
+						contentContainerClassName="p-4"
+						scrollEnabled={false}
+					/>
+				</Animated.View>
 			</Animated.View>
 		</GestureDetector>
 	);
