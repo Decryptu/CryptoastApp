@@ -11,6 +11,7 @@ import RenderHTML, {
 	type RenderersProps,
 	HTMLElementModel,
 } from "@builder.io/react-native-render-html";
+import type { Element as DOMElement } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
 
@@ -104,10 +105,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	};
 
 	const imageStyle: MixedStyleDeclaration = {
+		width: "100%", // Set width to 100% of contentWidth
+		height: undefined, // Let height adjust based on aspect ratio
 		alignSelf: "center",
 		marginVertical: 8,
 		borderRadius: 8,
-		objectFit: "contain",
+		objectFit: "contain", // Maintain aspect ratio
 	};
 
 	const videoContainerStyle: MixedStyleDeclaration = {
@@ -120,11 +123,22 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 			<RenderHTML
 				contentWidth={contentWidth}
 				source={{ html: content }}
-				// Pass the custom model so <iframe> tags are parsed.
+				domVisitors={{
+					onElement: (element: DOMElement) => {
+						if (element.tagName === "img") {
+							// Create new attribs object if it doesn't exist
+							element.attribs = {
+								...element.attribs,
+								width: "100%",
+								// Set height to empty string instead of removing it
+								height: "",
+							};
+						}
+					},
+				}}
 				customHTMLElementModels={customHTMLElementModels}
 				enableExperimentalBRCollapsing
 				enableExperimentalGhostLinesPrevention
-				// Override the default renderer for iframes.
 				renderers={{
 					iframe: YouTubeIframeRenderer,
 				}}
@@ -180,7 +194,9 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						borderLeftColor: themeColors.blockquoteBorder,
 						color: themeColors.blockquoteText,
 					},
-					img: imageStyle,
+					img: {
+						paddingVertical: 32
+					},
 					figure: {
 						marginVertical: 8,
 						alignSelf: "center",
