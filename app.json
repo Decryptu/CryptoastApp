@@ -14,7 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.Cryptoast"
+      "buildNumber": "10",
+      "bundleIdentifier": "com.cryptoast.newsapp"
     },
     "android": {
       "adaptiveIcon": {
