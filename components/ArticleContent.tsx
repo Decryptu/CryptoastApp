@@ -10,7 +10,7 @@ import RenderHTML, {
 	type MixedStyleDeclaration,
 	type RenderersProps,
 	HTMLElementModel,
-} from "@builder.io/react-native-render-html";
+} from "react-native-render-html";
 import type { Element as DOMElement } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
@@ -109,6 +109,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		height: undefined, // Let height adjust based on aspect ratio
 		alignSelf: "center",
 		marginVertical: 8,
+		paddingVertical: 16,
 		borderRadius: 8,
 		objectFit: "contain", // Maintain aspect ratio
 	};
@@ -194,9 +195,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						borderLeftColor: themeColors.blockquoteBorder,
 						color: themeColors.blockquoteText,
 					},
-					img: {
-						paddingVertical: 32
-					},
+					img: imageStyle,
 					figure: {
 						marginVertical: 8,
 						alignSelf: "center",
