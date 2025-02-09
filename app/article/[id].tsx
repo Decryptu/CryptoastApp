@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import {
-	View,
-	Share,
-	Animated,
-	type ScrollView,
-} from "react-native";
+import { View, Share, Animated, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import type { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 
@@ -158,26 +153,23 @@ export default function ArticleScreen() {
 
 	return (
 		<View className="flex-1 bg-white dark:bg-zinc-900">
-			<ArticleView
-				article={article}
-				refreshing={refreshing}
-				onRefresh={handleRefresh}
-				onShare={handleShare}
-				onInternalLinkPress={handleInternalLinkPress}
-				scrollViewRef={scrollViewRef}
-				onScroll={handleScroll}
-			/>
-
-			<ScrollToTopButton visible={showScrollButton} onPress={scrollToTop} />
-
+			{loading ? (
+				<ArticleContentSkeleton />
+			) : article ? (
+				<ArticleView
+					article={article}
+					refreshing={refreshing}
+					onRefresh={handleRefresh}
+					onShare={handleShare}
+					onInternalLinkPress={handleInternalLinkPress}
+					scrollViewRef={scrollViewRef}
+				/>
+			) : null}
 			{modalVisible && modalArticleId !== null && (
 				<ArticleModal
 					articleId={modalArticleId}
 					visible={modalVisible}
-					onClose={() => {
-						setModalVisible(false);
-						console.log("Closing article modal");
-					}}
+					onClose={() => setModalVisible(false)}
 					onInternalLinkPress={handleInternalLinkPress}
 				/>
 			)}

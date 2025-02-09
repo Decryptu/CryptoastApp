@@ -1,4 +1,3 @@
-// components/ArticleView.tsx
 import {
 	View,
 	Text,
@@ -10,14 +9,16 @@ import {
 	Platform,
 	type NativeSyntheticEvent,
 	type NativeScrollEvent,
+	Animated,
+	useColorScheme,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import colors from "tailwindcss/colors";
-import { useColorScheme } from "react-native";
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo, useRef, type FC } from "react";
 import type { Article } from "../types/article";
 import { ArticleContent } from "./ArticleContent";
 import { ArticleHeader } from "./ArticleHeader";
+import { ScrollToTopButton } from "./ScrollToTopButton";
 
 interface ArticleViewProps {
 	article: Article;
@@ -47,6 +48,12 @@ export const ArticleView: FC<ArticleViewProps> = ({
 	const isDark = colorScheme === "dark";
 	const IMAGE_HEIGHT = Dimensions.get("window").width / 2;
 
+	// Scroll handling
+	const scrollY = useRef(new Animated.Value(0)).current;
+	const showScrollButton = useRef(new Animated.Value(0)).current;
+	const localScrollViewRef = useRef<ScrollView>(null);
+	const activeScrollViewRef = scrollViewRef || localScrollViewRef;
+
 	// Process article data
 	const excerpt = article.excerpt.rendered.replace(/<[^>]*>/g, "");
 	const authorName =
@@ -71,6 +78,32 @@ export const ArticleView: FC<ArticleViewProps> = ({
 			minute: "2-digit",
 		}).format(date);
 	}, [article?.date]);
+
+	const handleScroll = Animated.event(
+		[{ nativeEvent: { contentOffset: { y: scrollY } } }],
+		{
+			useNativeDriver: false,
+			listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+				const offsetY = event.nativeEvent.contentOffset.y;
+				if (offsetY > 200) {
+					Animated.spring(showScrollButton, {
+						toValue: 1,
+						useNativeDriver: true,
+					}).start();
+				} else {
+					Animated.spring(showScrollButton, {
+						toValue: 0,
+						useNativeDriver: true,
+					}).start();
+				}
+				onScroll?.(event);
+			},
+		},
+	);
+
+	const scrollToTop = () => {
+		activeScrollViewRef.current?.scrollTo({ y: 0, animated: true });
+	};
 
 	const content = (
 		<View className="p-4">
@@ -120,7 +153,7 @@ export const ArticleView: FC<ArticleViewProps> = ({
 
 	const scrollView = (
 		<ScrollView
-			ref={isModal ? undefined : scrollViewRef}
+			ref={activeScrollViewRef}
 			className="flex-1"
 			refreshControl={
 				!isModal && onRefresh ? (
@@ -131,7 +164,7 @@ export const ArticleView: FC<ArticleViewProps> = ({
 					/>
 				) : undefined
 			}
-			onScroll={isModal ? undefined : onScroll}
+			onScroll={handleScroll}
 			scrollEventThrottle={16}
 			contentContainerStyle={
 				isModal ? { paddingBottom: Platform.OS === "ios" ? 20 : 16 } : undefined
@@ -142,5 +175,10 @@ export const ArticleView: FC<ArticleViewProps> = ({
 		</ScrollView>
 	);
 
-	return <View className="flex-1">{scrollView}</View>;
+	return (
+		<View className="flex-1">
+			{scrollView}
+			<ScrollToTopButton visible={showScrollButton} onPress={scrollToTop} />
+		</View>
+	);
 };

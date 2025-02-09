@@ -83,7 +83,6 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 			animationType="slide"
 			transparent
 			onRequestClose={onClose}
-			statusBarTranslucent
 		>
 			<View className="flex-1 bg-black/30">
 				<View
@@ -107,7 +106,6 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 							/>
 						</TouchableOpacity>
 					</View>
-
 					{/* Modal Content */}
 					{loading ? (
 						<ArticleContentSkeleton />
@@ -119,15 +117,9 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 							isModal={true}
 						/>
 					) : (
-						<View className="flex-1 items-center justify-center p-4">
-							<Text
-								className={`text-center ${
-									isDark ? "text-red-400" : "text-red-500"
-								} text-base`}
-							>
-								Unable to load article.
-							</Text>
-						</View>
+						<Text className="text-center text-red-500 dark:text-red-400 text-base mt-5">
+							Article not found.
+						</Text>
 					)}
 				</View>
 			</View>
