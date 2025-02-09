@@ -133,11 +133,10 @@ export const ArticleView: FC<ArticleViewProps> = ({
 				</TouchableOpacity>
 			</View>
 			{imageUrl && (
-				<View className="rounded-lg overflow-hidden mb-6">
+				<View className="w-full aspect-[2/1] rounded-lg overflow-hidden mb-6">
 					<Image
 						source={{ uri: imageUrl }}
-						className="w-full"
-						style={{ height: IMAGE_HEIGHT }}
+						className="w-full h-full"
 						resizeMode="cover"
 						onError={() => setImageError(true)}
 					/>

@@ -1,4 +1,4 @@
-import React, { type FC, useCallback } from "react";
+import React, { type FC, useCallback, useMemo } from "react";
 import {
 	useWindowDimensions,
 	Linking,
@@ -15,7 +15,6 @@ import type { Element as DOMElement } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
 
-// Instead of importing HTMLContentModel from an internal path, define it here:
 enum HTMLContentModel {
 	block = "block",
 	textual = "textual",
@@ -28,15 +27,22 @@ interface ArticleContentProps {
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
 
-// Create a custom HTMLElementModel for <iframe> using fromCustomModel.
-// This sets the content model to "block" so its children are parsed.
-const customHTMLElementModels = {
-	iframe: HTMLElementModel.fromCustomModel({
-		tagName: "iframe",
-		contentModel: HTMLContentModel.block,
-		isVoid: false, // Allows children
-		isOpaque: false, // Allows inner content parsing if needed
-	}),
+type TextStyle = {
+	fontSize: number;
+	fontWeight:
+		| "100"
+		| "200"
+		| "300"
+		| "400"
+		| "500"
+		| "600"
+		| "700"
+		| "800"
+		| "900"
+		| "bold"
+		| "normal";
+	marginVertical: number;
+	color: string;
 };
 
 export const ArticleContent: FC<ArticleContentProps> = ({
@@ -48,38 +54,160 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Custom renderer for YouTube iframes.
-	// Checks if the iframe's src is a YouTube URL and then renders it in a WebView.
-	const YouTubeIframeRenderer: FC<RenderersProps["iframe"]> = ({ tnode }) => {
-		const src = tnode.attributes.src;
-		if (!src) return null;
+	// Memoize custom element models
+	const customHTMLElementModels = useMemo(
+		() => ({
+			iframe: HTMLElementModel.fromCustomModel({
+				tagName: "iframe",
+				contentModel: HTMLContentModel.block,
+				isVoid: false,
+				isOpaque: false,
+			}),
+			center: HTMLElementModel.fromCustomModel({
+				tagName: "center",
+				contentModel: HTMLContentModel.block,
+			}),
+		}),
+		[],
+	);
 
-		const isYouTube =
-			src.includes("youtube.com/embed") || src.includes("youtu.be");
-		if (!isYouTube) return null;
+	// Memoize theme colors
+	const themeColors = useMemo(
+		() => ({
+			text: isDark ? colors.zinc[100] : colors.zinc[900],
+			link: isDark ? colors.amber[400] : colors.amber[500],
+			blockquoteBorder: isDark ? colors.amber[400] : colors.amber[400],
+			blockquoteText: isDark ? colors.zinc[300] : colors.zinc[600],
+		}),
+		[isDark],
+	);
 
-		// Fix protocol-relative URLs (e.g. //www.youtube.com/...)
-		const uri = src.startsWith("//") ? `https:${src}` : src;
-		const videoHeight = (contentWidth * 9) / 16;
+	// Memoize styles
+	const styles = useMemo(
+		() => ({
+			image: {
+				width: "100%",
+				height: undefined,
+				alignSelf: "center",
+				marginVertical: 8,
+				paddingVertical: 16,
+				borderRadius: 8,
+				objectFit: "contain",
+			} as MixedStyleDeclaration,
+			videoContainer: {
+				marginVertical: 8,
+				alignSelf: "center",
+			} as MixedStyleDeclaration,
+		}),
+		[],
+	);
 
-		console.log(`Rendering YouTube embed with URL: ${uri}`);
+	// Memoize tag styles
+	const tagsStyles = useMemo(
+		() => ({
+			h1: {
+				fontSize: 32,
+				fontWeight: "bold",
+				marginVertical: 8,
+				color: themeColors.text,
+			} as MixedStyleDeclaration,
+			h2: {
+				fontSize: 28,
+				fontWeight: "bold",
+				marginVertical: 8,
+				color: themeColors.text,
+			} as MixedStyleDeclaration,
+			h3: {
+				fontSize: 24,
+				fontWeight: "bold",
+				marginVertical: 8,
+				color: themeColors.text,
+			} as MixedStyleDeclaration,
+			h4: {
+				fontSize: 20,
+				fontWeight: "bold",
+				marginVertical: 8,
+				color: themeColors.text,
+			} as MixedStyleDeclaration,
+			p: {
+				fontSize: 16,
+				marginVertical: 4,
+				lineHeight: 22,
+				color: themeColors.text,
+			} as MixedStyleDeclaration,
+			a: {
+				color: themeColors.link,
+				textDecorationColor: themeColors.link,
+				textDecorationLine: "underline",
+			} as MixedStyleDeclaration,
+			blockquote: {
+				fontStyle: "italic",
+				marginVertical: 8,
+				paddingHorizontal: 16,
+				marginHorizontal: 4,
+				borderLeftWidth: 4,
+				borderLeftColor: themeColors.blockquoteBorder,
+				color: themeColors.blockquoteText,
+			} as MixedStyleDeclaration,
+			img: styles.image,
+			figure: {
+				marginVertical: 8,
+				alignSelf: "center",
+			} as MixedStyleDeclaration,
+			figcaption: {
+				fontSize: 14,
+				color: themeColors.blockquoteText,
+				textAlign: "center",
+				marginTop: 4,
+			} as MixedStyleDeclaration,
+			ul: {
+				color: themeColors.text,
+				marginLeft: 16,
+			} as MixedStyleDeclaration,
+			ol: {
+				color: themeColors.text,
+				marginLeft: 16,
+			} as MixedStyleDeclaration,
+			li: {
+				color: themeColors.text,
+				marginVertical: 2,
+			} as MixedStyleDeclaration,
+			"div.vidcontainer": styles.videoContainer,
+		}),
+		[themeColors, styles],
+	);
 
-		return (
-			<WebView
-				source={{ uri }}
-				style={{
-					width: contentWidth,
-					height: videoHeight,
-					marginVertical: 8,
-				}}
-				allowsFullscreenVideo
-				javaScriptEnabled
-				scalesPageToFit
-			/>
-		);
-	};
+	// Memoize YouTube renderer
+	const YouTubeIframeRenderer = useCallback<FC<RenderersProps["iframe"]>>(
+		({ tnode }) => {
+			const src = tnode.attributes.src;
+			if (!src) return null;
 
-	// Handle link presses (internal vs. external).
+			const isYouTube =
+				src.includes("youtube.com/embed") || src.includes("youtu.be");
+			if (!isYouTube) return null;
+
+			const uri = src.startsWith("//") ? `https:${src}` : src;
+			const videoHeight = (contentWidth * 9) / 16;
+
+			return (
+				<WebView
+					source={{ uri }}
+					style={{
+						width: contentWidth,
+						height: videoHeight,
+						marginVertical: 8,
+					}}
+					allowsFullscreenVideo
+					javaScriptEnabled
+					scalesPageToFit
+				/>
+			);
+		},
+		[contentWidth],
+	);
+
+	// Memoize link handler
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			if (!href) return;
@@ -97,27 +225,17 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[onInternalLinkPress],
 	);
 
-	const themeColors = {
-		text: isDark ? colors.zinc[100] : colors.zinc[900],
-		link: isDark ? colors.amber[400] : colors.amber[500],
-		blockquoteBorder: isDark ? colors.amber[400] : colors.amber[400],
-		blockquoteText: isDark ? colors.zinc[300] : colors.zinc[600],
-	};
-
-	const imageStyle: MixedStyleDeclaration = {
-		width: "100%", // Set width to 100% of contentWidth
-		height: undefined, // Let height adjust based on aspect ratio
-		alignSelf: "center",
-		marginVertical: 8,
-		paddingVertical: 16,
-		borderRadius: 8,
-		objectFit: "contain", // Maintain aspect ratio
-	};
-
-	const videoContainerStyle: MixedStyleDeclaration = {
-		marginVertical: 8,
-		alignSelf: "center",
-	};
+	// Memoize renderers props
+	const renderersProps = useMemo(
+		() => ({
+			a: { onPress: handleLinkPress },
+			img: {
+				enableExperimentalPercentWidth: true,
+				initialDimensions: { width: contentWidth, height: 200 },
+			},
+		}),
+		[handleLinkPress, contentWidth],
+	);
 
 	return (
 		<View className="flex-1">
@@ -127,11 +245,9 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 				domVisitors={{
 					onElement: (element: DOMElement) => {
 						if (element.tagName === "img") {
-							// Create new attribs object if it doesn't exist
 							element.attribs = {
 								...element.attribs,
 								width: "100%",
-								// Set height to empty string instead of removing it
 								height: "",
 							};
 						}
@@ -143,77 +259,9 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 				renderers={{
 					iframe: YouTubeIframeRenderer,
 				}}
-				renderersProps={{
-					a: { onPress: handleLinkPress },
-					img: {
-						enableExperimentalPercentWidth: true,
-						initialDimensions: { width: contentWidth, height: 200 },
-					},
-				}}
+				renderersProps={renderersProps}
 				baseStyle={{ color: themeColors.text, fontSize: 16 }}
-				tagsStyles={{
-					h1: {
-						fontSize: 32,
-						fontWeight: "bold",
-						marginVertical: 8,
-						color: themeColors.text,
-					},
-					h2: {
-						fontSize: 28,
-						fontWeight: "bold",
-						marginVertical: 8,
-						color: themeColors.text,
-					},
-					h3: {
-						fontSize: 24,
-						fontWeight: "bold",
-						marginVertical: 8,
-						color: themeColors.text,
-					},
-					h4: {
-						fontSize: 20,
-						fontWeight: "bold",
-						marginVertical: 8,
-						color: themeColors.text,
-					},
-					p: {
-						fontSize: 16,
-						marginVertical: 4,
-						lineHeight: 22,
-						color: themeColors.text,
-					},
-					a: {
-						color: themeColors.link,
-						textDecorationColor: themeColors.link,
-						textDecorationLine: "underline",
-					},
-					blockquote: {
-						fontStyle: "italic",
-						marginVertical: 8,
-						paddingHorizontal: 16,
-						marginHorizontal: 4,
-						borderLeftWidth: 4,
-						borderLeftColor: themeColors.blockquoteBorder,
-						color: themeColors.blockquoteText,
-					},
-					img: imageStyle,
-					figure: {
-						marginVertical: 8,
-						alignSelf: "center",
-					},
-					figcaption: {
-						fontSize: 14,
-						color: themeColors.blockquoteText,
-						textAlign: "center",
-						marginTop: 4,
-					},
-					ul: { color: themeColors.text, marginLeft: 16 },
-					ol: { color: themeColors.text, marginLeft: 16 },
-					li: { color: themeColors.text, marginVertical: 2 },
-					"div.vidcontainer": videoContainerStyle,
-					// Remove any styles that hide the iframe.
-					// iframe: { display: "none" },
-				}}
+				tagsStyles={tagsStyles}
 			/>
 		</View>
 	);
