@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Article } from "../types/article";
 
 const LIST_CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes for lists
-const ARTICLE_CACHE_EXPIRY = 60 * 60 * 1000; // 60 minutes for individual articles
+const ARTICLE_CACHE_EXPIRY = 1440 * 60 * 1000; // 24 hours for individual articles
 const SEARCH_CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes for search results
 
 const CACHE_PREFIX = {
