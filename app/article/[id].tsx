@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Share, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { fetchArticle } from "../../services/api";
 import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
@@ -111,26 +111,15 @@ export default function ArticleScreen() {
 		[],
 	);
 
-	if (loading) {
-		console.log("Rendering article skeleton");
-		return (
-			<View className="flex-1 bg-white dark:bg-zinc-900">
-				<ArticleContentSkeleton />
-			</View>
-		);
-	}
-
-	if (!article) {
-		console.log("No article data available");
-		return null;
-	}
-
 	const isFromSearch = presentedFromSearch === "true";
+	const safeAreaEdges: Edge[] = isFromSearch
+		? ["bottom"]
+		: ["top", "right", "bottom", "left"];
 
 	return (
 		<SafeAreaView
 			className="flex-1 bg-white dark:bg-zinc-900"
-			edges={isFromSearch ? ["bottom"] : ["top", "right", "bottom", "left"]}
+			edges={safeAreaEdges}
 		>
 			<View className="flex-1 bg-white dark:bg-zinc-900">
 				{loading ? (
@@ -143,9 +132,10 @@ export default function ArticleScreen() {
 						onShare={handleShare}
 						onInternalLinkPress={handleInternalLinkPress}
 						scrollViewRef={scrollViewRef}
-						isModal={presentedFromSearch === "true"}
+						isModal={isFromSearch}
 					/>
 				) : null}
+
 				{modalVisible && modalArticleId !== null && (
 					<ArticleModal
 						articleId={modalArticleId}
