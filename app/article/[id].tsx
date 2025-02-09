@@ -1,14 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Share, Animated, type ScrollView } from "react-native";
+import { View, Share, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import type { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchArticle } from "../../services/api";
 import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
 import { ArticleContentSkeleton } from "../../components/ArticleContentSkeleton";
 import { useScrollToTop } from "../../hooks/useScrollToTop";
-import { ScrollToTopButton } from "../../components/ScrollToTopButton";
 import { ArticleModal } from "../../components/ArticleModal";
 import { ArticleView } from "../../components/ArticleView";
 
@@ -19,13 +17,14 @@ const extractArticleSlug = (url: string): string | null => {
 };
 
 export default function ArticleScreen() {
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id, presentedFromSearch } = useLocalSearchParams<{
+		id: string;
+		presentedFromSearch?: string;
+	}>();
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 	const scrollViewRef = useRef<ScrollView>(null);
-	const scrollY = useRef(new Animated.Value(0)).current;
-	const showScrollButton = useRef(new Animated.Value(0)).current;
 
 	// Modal state
 	const [modalVisible, setModalVisible] = useState(false);
@@ -112,31 +111,6 @@ export default function ArticleScreen() {
 		[],
 	);
 
-	const handleScroll = Animated.event(
-		[{ nativeEvent: { contentOffset: { y: scrollY } } }],
-		{
-			useNativeDriver: false,
-			listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-				const offsetY = event.nativeEvent.contentOffset.y;
-				if (offsetY > 200) {
-					Animated.spring(showScrollButton, {
-						toValue: 1,
-						useNativeDriver: true,
-					}).start();
-				} else {
-					Animated.spring(showScrollButton, {
-						toValue: 0,
-						useNativeDriver: true,
-					}).start();
-				}
-			},
-		},
-	);
-
-	const scrollToTop = () => {
-		scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-	};
-
 	if (loading) {
 		console.log("Rendering article skeleton");
 		return (
@@ -151,28 +125,36 @@ export default function ArticleScreen() {
 		return null;
 	}
 
+	const isFromSearch = presentedFromSearch === "true";
+
 	return (
-		<View className="flex-1 bg-white dark:bg-zinc-900">
-			{loading ? (
-				<ArticleContentSkeleton />
-			) : article ? (
-				<ArticleView
-					article={article}
-					refreshing={refreshing}
-					onRefresh={handleRefresh}
-					onShare={handleShare}
-					onInternalLinkPress={handleInternalLinkPress}
-					scrollViewRef={scrollViewRef}
-				/>
-			) : null}
-			{modalVisible && modalArticleId !== null && (
-				<ArticleModal
-					articleId={modalArticleId}
-					visible={modalVisible}
-					onClose={() => setModalVisible(false)}
-					onInternalLinkPress={handleInternalLinkPress}
-				/>
-			)}
-		</View>
+		<SafeAreaView
+			className="flex-1 bg-white dark:bg-zinc-900"
+			edges={isFromSearch ? ["bottom"] : ["top", "right", "bottom", "left"]}
+		>
+			<View className="flex-1 bg-white dark:bg-zinc-900">
+				{loading ? (
+					<ArticleContentSkeleton />
+				) : article ? (
+					<ArticleView
+						article={article}
+						refreshing={refreshing}
+						onRefresh={handleRefresh}
+						onShare={handleShare}
+						onInternalLinkPress={handleInternalLinkPress}
+						scrollViewRef={scrollViewRef}
+						isModal={presentedFromSearch === "true"}
+					/>
+				) : null}
+				{modalVisible && modalArticleId !== null && (
+					<ArticleModal
+						articleId={modalArticleId}
+						visible={modalVisible}
+						onClose={() => setModalVisible(false)}
+						onInternalLinkPress={handleInternalLinkPress}
+					/>
+				)}
+			</View>
+		</SafeAreaView>
 	);
 }

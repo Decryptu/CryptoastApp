@@ -109,7 +109,10 @@ export default function SearchScreen() {
 	};
 
 	const handleArticlePress = (article: Article) => {
-		router.push(`/article/${article.id}`);
+		router.push({
+			pathname: `/article/${article.id}`,
+			params: { presentedFromSearch: 'true' }
+		});
 	};
 
 	const handleClearSearch = () => {
