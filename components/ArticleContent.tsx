@@ -8,13 +8,35 @@ import {
 } from "react-native";
 import RenderHTML, {
 	type MixedStyleDeclaration,
+	type RenderersProps,
+	HTMLElementModel,
 } from "@builder.io/react-native-render-html";
+import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
+
+// Instead of importing HTMLContentModel from an internal path, define it here:
+enum HTMLContentModel {
+	block = "block",
+	textual = "textual",
+	mixed = "mixed",
+	none = "none",
+}
 
 interface ArticleContentProps {
 	content: string;
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
+
+// Create a custom HTMLElementModel for <iframe> using fromCustomModel.
+// This sets the content model to "block" so its children are parsed.
+const customHTMLElementModels = {
+	iframe: HTMLElementModel.fromCustomModel({
+		tagName: "iframe",
+		contentModel: HTMLContentModel.block,
+		isVoid: false, // Allows children
+		isOpaque: false, // Allows inner content parsing if needed
+	}),
+};
 
 export const ArticleContent: FC<ArticleContentProps> = ({
 	content,
@@ -25,6 +47,38 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
+	// Custom renderer for YouTube iframes.
+	// Checks if the iframe's src is a YouTube URL and then renders it in a WebView.
+	const YouTubeIframeRenderer: FC<RenderersProps["iframe"]> = ({ tnode }) => {
+		const src = tnode.attributes.src;
+		if (!src) return null;
+
+		const isYouTube =
+			src.includes("youtube.com/embed") || src.includes("youtu.be");
+		if (!isYouTube) return null;
+
+		// Fix protocol-relative URLs (e.g. //www.youtube.com/...)
+		const uri = src.startsWith("//") ? `https:${src}` : src;
+		const videoHeight = (contentWidth * 9) / 16;
+
+		console.log(`Rendering YouTube embed with URL: ${uri}`);
+
+		return (
+			<WebView
+				source={{ uri }}
+				style={{
+					width: contentWidth,
+					height: videoHeight,
+					marginVertical: 8,
+				}}
+				allowsFullscreenVideo
+				javaScriptEnabled
+				scalesPageToFit
+			/>
+		);
+	};
+
+	// Handle link presses (internal vs. external).
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			if (!href) return;
@@ -56,27 +110,32 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		objectFit: "contain",
 	};
 
+	const videoContainerStyle: MixedStyleDeclaration = {
+		marginVertical: 8,
+		alignSelf: "center",
+	};
+
 	return (
 		<View className="flex-1">
 			<RenderHTML
 				contentWidth={contentWidth}
 				source={{ html: content }}
+				// Pass the custom model so <iframe> tags are parsed.
+				customHTMLElementModels={customHTMLElementModels}
 				enableExperimentalBRCollapsing
 				enableExperimentalGhostLinesPrevention
+				// Override the default renderer for iframes.
+				renderers={{
+					iframe: YouTubeIframeRenderer,
+				}}
 				renderersProps={{
 					a: { onPress: handleLinkPress },
 					img: {
 						enableExperimentalPercentWidth: true,
-						initialDimensions: {
-							width: contentWidth,
-							height: 200,
-						},
+						initialDimensions: { width: contentWidth, height: 200 },
 					},
 				}}
-				baseStyle={{
-					color: themeColors.text,
-					fontSize: 16,
-				}}
+				baseStyle={{ color: themeColors.text, fontSize: 16 }}
 				tagsStyles={{
 					h1: {
 						fontSize: 32,
@@ -132,18 +191,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						textAlign: "center",
 						marginTop: 4,
 					},
-					ul: {
-						color: themeColors.text,
-						marginLeft: 16,
-					},
-					ol: {
-						color: themeColors.text,
-						marginLeft: 16,
-					},
-					li: {
-						color: themeColors.text,
-						marginVertical: 2,
-					},
+					ul: { color: themeColors.text, marginLeft: 16 },
+					ol: { color: themeColors.text, marginLeft: 16 },
+					li: { color: themeColors.text, marginVertical: 2 },
+					"div.vidcontainer": videoContainerStyle,
+					// Remove any styles that hide the iframe.
+					// iframe: { display: "none" },
 				}}
 			/>
 		</View>
