@@ -99,8 +99,8 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 
 	const themeColors = {
 		text: isDark ? colors.zinc[100] : colors.zinc[900],
-		link: isDark ? colors.amber[400] : colors.amber[600],
-		blockquoteBorder: isDark ? colors.zinc[700] : colors.zinc[300],
+		link: isDark ? colors.amber[400] : colors.amber[500],
+		blockquoteBorder: isDark ? colors.amber[400] : colors.amber[400],
 		blockquoteText: isDark ? colors.zinc[300] : colors.zinc[600],
 	};
 
@@ -191,6 +191,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						fontStyle: "italic",
 						marginVertical: 8,
 						paddingHorizontal: 16,
+						marginHorizontal: 4,
 						borderLeftWidth: 4,
 						borderLeftColor: themeColors.blockquoteBorder,
 						color: themeColors.blockquoteText,
