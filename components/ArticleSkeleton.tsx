@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 export const ArticleSkeleton = () => {
 	return (
-		<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg shadow-md mb-4 overflow-hidden animate-pulse">
+		<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg mb-4 overflow-hidden animate-pulse">
 			{/* Image placeholder */}
 			<View className="w-full h-48 bg-zinc-200 dark:bg-zinc-700" />
 

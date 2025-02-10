@@ -88,7 +88,7 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 				<View
 					className={`absolute bottom-0 left-2.5 right-2.5 ${
 						isDark ? "bg-zinc-900" : "bg-white"
-					} rounded-t-xl shadow-lg overflow-hidden`}
+					} rounded-t-xl overflow-hidden`}
 					style={{ height: SCREEN_HEIGHT * 0.9 }}
 				>
 					{/* Modal Header */}

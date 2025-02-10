@@ -30,7 +30,7 @@ export const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({
 		>
 			<TouchableOpacity
 				onPress={onPress}
-				className="w-10 h-10 rounded-full bg-zinc-500 items-center justify-center shadow-lg"
+				className="w-10 h-10 rounded-full bg-zinc-500 items-center justify-center"
 			>
 				<Feather name="arrow-up" size={24} color="white" />
 			</TouchableOpacity>
