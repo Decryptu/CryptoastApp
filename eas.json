@@ -1,31 +1,37 @@
 {
-  "cli": {
-    "version": ">= 5.9.1",
-    "appVersionSource": "remote"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {
-      "ios": {
-        "distribution": "store",
-        "credentialsSource": "remote",
-        "autoIncrement": true
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "gurvan.lecointre@icloud.com",
-        "ascAppId": "1587061733",
-        "appleTeamId": "78327W728T"
-      }
-    }
-  }
+	"cli": {
+		"version": ">= 5.9.1",
+		"appVersionSource": "remote"
+	},
+	"build": {
+		"development": {
+			"developmentClient": true,
+			"distribution": "internal"
+		},
+		"preview": {
+			"distribution": "internal",
+			"android": {
+				"buildType": "apk"
+			}
+		},
+		"production": {
+			"ios": {
+				"distribution": "store",
+				"credentialsSource": "remote",
+				"autoIncrement": true
+			},
+			"android": {
+				"buildType": "app-bundle"
+			}
+		}
+	},
+	"submit": {
+		"production": {
+			"ios": {
+				"appleId": "gurvan.lecointre@icloud.com",
+				"ascAppId": "1587061733",
+				"appleTeamId": "78327W728T"
+			}
+		}
+	}
 }
