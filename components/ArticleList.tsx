@@ -31,6 +31,13 @@ interface ArticleListProps {
 
 const NUM_SKELETONS = 3;
 
+// Create unique identifiers for skeletons
+const SKELETON_IDS = {
+	MAIN: Array.from({ length: NUM_SKELETONS }, (_, i) => `skeleton-main-${i}`),
+	LEFT: Array.from({ length: NUM_SKELETONS }, (_, i) => `skeleton-left-${i}`),
+	RIGHT: Array.from({ length: NUM_SKELETONS }, (_, i) => `skeleton-right-${i}`),
+} as const;
+
 export function ArticleList({
 	articles,
 	loading,
@@ -47,6 +54,9 @@ export function ArticleList({
 	const isDark = colorScheme === "dark";
 	const { width } = useWindowDimensions();
 
+	const isTablet = width >= 768;
+	const numColumns = isTablet ? 2 : 1;
+
 	const handleArticlePress = useCallback(
 		(article: Article) => {
 			router.push({
@@ -55,6 +65,15 @@ export function ArticleList({
 			});
 		},
 		[router],
+	);
+
+	const renderItem = useCallback(
+		({ item }: { item: Article }) => (
+			<View className={`${isTablet ? "w-1/2 p-2" : "w-full p-4"}`}>
+				<ArticleCard article={item} onPress={() => handleArticlePress(item)} />
+			</View>
+		),
+		[handleArticlePress, isTablet],
 	);
 
 	const renderFooter = useCallback(() => {
@@ -70,16 +89,24 @@ export function ArticleList({
 		);
 	}, [loadingMore, isDark]);
 
-	const renderSkeletons = (
-		<FlatList
-			data={Array(NUM_SKELETONS).fill(0)}
-			keyExtractor={(_, index) => index.toString()}
-			renderItem={() => <ArticleSkeleton />}
-			contentContainerClassName="p-4"
-		/>
+	const renderSkeletonSet = useCallback(
+		(skeletonIds: readonly string[]) => (
+			<View className={`flex-row flex-wrap ${isTablet ? "px-2" : "px-4"}`}>
+				{skeletonIds.map((skeletonId) => (
+					<View
+						key={skeletonId}
+						className={`${isTablet ? "w-1/2 p-2" : "w-full p-4"}`}
+					>
+						<ArticleSkeleton />
+					</View>
+				))}
+			</View>
+		),
+		[isTablet],
 	);
 
-	// Side skeleton styles to position them absolutely
+	const renderSkeletons = renderSkeletonSet(SKELETON_IDS.MAIN);
+
 	const leftSkeletonStyle = useAnimatedStyle(() => ({
 		position: "absolute",
 		left: -width,
@@ -99,29 +126,19 @@ export function ArticleList({
 	const renderContent = (
 		<GestureDetector gesture={panGesture}>
 			<Animated.View style={animatedStyle} className="flex-1">
-				{/* Left side skeletons */}
 				<Animated.View style={leftSkeletonStyle}>
-					<FlatList
-						data={Array(NUM_SKELETONS).fill(0)}
-						keyExtractor={(_, index) => `left-${index}`}
-						renderItem={() => <ArticleSkeleton />}
-						contentContainerClassName="p-4"
-						scrollEnabled={false}
-					/>
+					{renderSkeletonSet(SKELETON_IDS.LEFT)}
 				</Animated.View>
 
-				{/* Main content */}
 				<FlatList
 					ref={tabScrollRefs[section.toLowerCase()]}
 					data={articles}
 					keyExtractor={(item) => item.id.toString()}
-					renderItem={({ item }) => (
-						<ArticleCard
-							article={item}
-							onPress={() => handleArticlePress(item)}
-						/>
-					)}
-					contentContainerClassName="p-4"
+					renderItem={renderItem}
+					numColumns={numColumns}
+					key={`list-${numColumns}`}
+					contentContainerClassName={`${isTablet ? "px-2" : "px-4"}`}
+					columnWrapperClassName={isTablet ? "justify-between" : undefined}
 					refreshControl={
 						<RefreshControl
 							refreshing={refreshing}
@@ -134,15 +151,8 @@ export function ArticleList({
 					ListFooterComponent={renderFooter}
 				/>
 
-				{/* Right side skeletons */}
 				<Animated.View style={rightSkeletonStyle}>
-					<FlatList
-						data={Array(NUM_SKELETONS).fill(0)}
-						keyExtractor={(_, index) => `right-${index}`}
-						renderItem={() => <ArticleSkeleton />}
-						contentContainerClassName="p-4"
-						scrollEnabled={false}
-					/>
+					{renderSkeletonSet(SKELETON_IDS.RIGHT)}
 				</Animated.View>
 			</Animated.View>
 		</GestureDetector>
