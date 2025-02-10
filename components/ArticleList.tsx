@@ -29,7 +29,7 @@ interface ArticleListProps {
 	animatedStyle: ReanimatedStyle;
 }
 
-const NUM_SKELETONS = 3;
+const NUM_SKELETONS = 10;
 
 // Create unique identifiers for skeletons
 const SKELETON_IDS = {
