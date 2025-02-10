@@ -38,6 +38,11 @@ export default function SearchScreen() {
 		return () => clearTimeout(timeoutId);
 	}, []);
 
+	/**
+	 * Fetch articles for a given page.
+	 * For the first page, check the cache first and use cached results if available.
+	 * For subsequent pages, load data from the network.
+	 */
 	const fetchArticles = async (pageNumber: number, isLoadingMore = false) => {
 		const trimmedQuery = query.trim();
 		if (!trimmedQuery) return;
@@ -49,33 +54,62 @@ export default function SearchScreen() {
 		}
 
 		try {
-			// Check cache only for first page
+			// Check cache only for first page.
 			if (pageNumber === 1) {
 				const cachedResults = await getSearchCache(trimmedQuery);
 				if (cachedResults) {
+					console.log(
+						`✅ Cache hit for search query: "${trimmedQuery}" - ${cachedResults.length} results`,
+					);
+					console.log("Using cached results");
 					setArticles(cachedResults);
 					setLoading(false);
 					setHasSearched(true);
+					// Removed: setHasMore(false) so that load more is still enabled.
 					return;
 				}
 			}
 
 			const response = await fetch(
-				`https://cryptoast.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(trimmedQuery)}&page=${pageNumber}&per_page=10&_embed=true`,
+				`https://cryptoast.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(
+					trimmedQuery,
+				)}&page=${pageNumber}&per_page=10&_embed=true`,
 			);
+
+			// If loading more and the response status is 400, assume there are no more pages.
+			if (!response.ok) {
+				if (pageNumber > 1 && response.status === 400) {
+					console.warn(
+						`No more pages for query "${trimmedQuery}" on page ${pageNumber}.`,
+					);
+					setHasMore(false);
+					return;
+				}
+				throw new Error(
+					`Network response was not ok. Status: ${response.status}`,
+				);
+			}
 
 			const data = await response.json();
 
-			// Check if we have more pages
+			// Ensure that data is an array before using it.
+			const articlesArray = Array.isArray(data) ? data : [];
+			if (!Array.isArray(data)) {
+				console.warn("Expected array from API, got:", data);
+			}
+
+			// Determine total pages from header and update hasMore accordingly.
 			const totalPages = Number(response.headers.get("X-WP-TotalPages")) || 1;
 			setHasMore(pageNumber < totalPages);
 
 			if (isLoadingMore) {
-				setArticles((prev) => [...prev, ...data]);
+				console.log("Loading more articles, page:", pageNumber);
+				setArticles((prev) => [...prev, ...articlesArray]);
 			} else {
-				setArticles(data);
-				// Only cache first page results
-				await setSearchCache(trimmedQuery, data);
+				console.log("Setting articles for new search, page:", pageNumber);
+				setArticles(articlesArray);
+				// Cache only the first page of results.
+				await setSearchCache(trimmedQuery, articlesArray);
 			}
 		} catch (error) {
 			console.error("🔴 Search error:", error);
@@ -90,6 +124,7 @@ export default function SearchScreen() {
 	const handleSearch = () => {
 		if (!query.trim()) return;
 		setPage(1);
+		// Reset hasMore to true for a new search.
 		setHasMore(true);
 		setHasSearched(true);
 		void fetchArticles(1);
@@ -111,7 +146,7 @@ export default function SearchScreen() {
 	const handleArticlePress = (article: Article) => {
 		router.push({
 			pathname: `/article/${article.id}`,
-			params: { presentedFromSearch: 'true' }
+			params: { presentedFromSearch: "true" },
 		});
 	};
 
