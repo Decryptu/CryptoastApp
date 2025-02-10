@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "buildNumber": "10",
-      "bundleIdentifier": "com.cryptoast.newsapp"
+      "bundleIdentifier": "com.cryptoast.newsapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
