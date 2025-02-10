@@ -146,10 +146,21 @@ export default function SearchScreen() {
 	const renderEmpty = () => {
 		if (loading) {
 			return (
-				<View className="space-y-4">
-					{Array.from({ length: 10 }).map(() => (
-						<ArticleSkeleton key={`skeleton-${Math.random()}`} />
-					))}
+				<View className="p-1">
+					<View className="flex-row flex-wrap">
+						{Array.from({ length: 10 }).map((_, index) => (
+							<View
+								key={`skeleton-${Math.random()}`}
+								className={
+									Platform.OS === "ios" && Platform.isPad
+										? "w-1/2 p-2"
+										: "w-full"
+								}
+							>
+								<ArticleSkeleton />
+							</View>
+						))}
+					</View>
 				</View>
 			);
 		}
@@ -168,7 +179,7 @@ export default function SearchScreen() {
 	};
 
 	return (
-		<SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
+		<SafeAreaView edges={["top"]} className="flex-1 bg-white dark:bg-zinc-900">
 			<View className="flex-row items-center p-4 border-b border-zinc-200 dark:border-zinc-700">
 				<Pressable onPress={() => router.back()} className="mr-3">
 					<Feather
