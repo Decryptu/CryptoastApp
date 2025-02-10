@@ -68,9 +68,15 @@ export function ArticleList({
 	);
 
 	const renderItem = useCallback(
-		({ item }: { item: Article }) => (
-			<View className={`${isTablet ? "w-1/2 p-2" : "w-full p-4"}`}>
-				<ArticleCard article={item} onPress={() => handleArticlePress(item)} />
+		(props: { item: Article; index: number }) => (
+			<View
+				className={`${isTablet ? "w-1/2 p-2" : "w-full"}
+			${props.index === 0 ? "mt-4" : ""}`}
+			>
+				<ArticleCard
+					article={props.item}
+					onPress={() => handleArticlePress(props.item)}
+				/>
 			</View>
 		),
 		[handleArticlePress, isTablet],
@@ -91,7 +97,7 @@ export function ArticleList({
 
 	const renderSkeletonSet = useCallback(
 		(skeletonIds: readonly string[]) => (
-			<View className={`flex-row flex-wrap ${isTablet ? "px-2" : "px-4"}`}>
+			<View className={`flex-row flex-wrap ${isTablet ? "px-2" : "px-0"}`}>
 				{skeletonIds.map((skeletonId) => (
 					<View
 						key={skeletonId}
