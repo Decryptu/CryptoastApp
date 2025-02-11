@@ -3,6 +3,7 @@ import { useColorScheme, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "tailwindcss/colors";
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import "../global.css";
 
 export default function RootLayout() {
@@ -10,47 +11,48 @@ export default function RootLayout() {
 	const isDark = colorScheme === "dark";
 	const router = useRouter();
 
+	const commonHeaderOptions: NativeStackNavigationOptions = {
+		headerStyle: {
+			backgroundColor: isDark ? colors.zinc[900] : colors.white,
+		},
+		headerTitleStyle: {
+			color: isDark ? colors.white : colors.zinc[800],
+			fontSize: 18,
+			fontWeight: "500",
+		},
+		headerTitleAlign: Platform.OS === "android" ? "center" : "left",
+		headerRight: () => (
+			<Pressable
+				onPress={() => router.push("/search")}
+				className="pr-4"
+				hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+			>
+				<Feather
+					name="search"
+					size={24}
+					color={isDark ? colors.white : colors.zinc[800]}
+				/>
+			</Pressable>
+		),
+		headerShadowVisible: false,
+		headerBackTitle: Platform.OS === "ios" ? "Retour" : undefined,
+		headerTintColor: colors.amber[500],
+	};
+
 	return (
 		<Stack
 			screenOptions={{
-				headerStyle: {
-					backgroundColor: isDark ? colors.zinc[900] : colors.white,
-				},
-				headerTitleStyle: {
-					color: isDark ? colors.white : colors.zinc[800],
-					fontSize: 18,
-					fontWeight: "500",
-				},
-				headerTitleAlign: "left",
-				headerRight: () => (
-					<Pressable
-						onPress={() => router.push("/search")}
-						className="pr-4"
-						hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-					>
-						<Feather
-							name="search"
-							size={24}
-							color={isDark ? colors.white : colors.zinc[800]}
-						/>
-					</Pressable>
-				),
-				// Clean up header appearance
-				headerShadowVisible: false,
-				// Customize back button
-				headerBackTitle: "Retour",
-				headerTintColor: colors.amber[500], // Using Tailwind amber color
+				...commonHeaderOptions,
+				headerShown: true,
 			}}
 		>
-			{/* Main tab navigation */}
 			<Stack.Screen
 				name="(tabs)"
 				options={{
-					headerShown: Platform.OS === "android", // This will be true on Android and false on iOS
+					headerShown: false,
 				}}
 			/>
 
-			{/* Modal screens */}
 			<Stack.Screen
 				name="search"
 				options={{
@@ -62,14 +64,14 @@ export default function RootLayout() {
 				}}
 			/>
 
-			{/* Article screen */}
 			<Stack.Screen
 				name="article/[id]"
 				options={{
+					...commonHeaderOptions,
 					headerTitle: "",
 					presentation: "card",
-					headerBackTitle: "Retour",
-					headerTintColor: colors.amber[500], // Using Tailwind amber color
+					headerShown: true,
+					headerBackVisible: true,
 				}}
 			/>
 		</Stack>

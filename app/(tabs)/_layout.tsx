@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { useColorScheme, Pressable } from "react-native";
+import { useColorScheme, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { TAB_ROUTES } from "../../constants/routes";
@@ -20,7 +20,6 @@ export default function TabLayout() {
 	return (
 		<Tabs
 			screenOptions={{
-				// Reuse the same header style as root layout
 				headerStyle: {
 					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 				},
@@ -29,7 +28,8 @@ export default function TabLayout() {
 					fontSize: 18,
 					fontWeight: "500",
 				},
-				headerTitleAlign: "left",
+				headerTitleAlign: Platform.OS === "android" ? "center" : "left",
+				headerShown: true,
 				headerRight: () => (
 					<Pressable
 						onPress={() => router.push("/search")}
@@ -44,7 +44,6 @@ export default function TabLayout() {
 					</Pressable>
 				),
 				headerShadowVisible: false,
-				// Tab bar styling
 				tabBarStyle: {
 					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 					borderTopColor: isDark ? colors.zinc[700] : colors.zinc[200],
