@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { ArticleCard } from "../components/ArticleCard";
 import { ArticleSkeleton } from "../components/ArticleSkeleton";
-import { getSearchCache, setSearchCache } from "../services/ArticleCache";
+import { API_CONFIG } from "../config/api";
 import colors from "tailwindcss/colors";
 import type { Article } from "../types/article";
 
@@ -31,7 +31,6 @@ export default function SearchScreen() {
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Focus search input on mount
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			searchInputRef.current?.focus();
@@ -50,21 +49,11 @@ export default function SearchScreen() {
 		}
 
 		try {
-			// Check cache for first page only
-			if (pageNumber === 1) {
-				const cachedResults = await getSearchCache(trimmedQuery);
-				if (cachedResults) {
-					setArticles(cachedResults);
-					setLoading(false);
-					setHasSearched(true);
-					return;
-				}
-			}
-
+			// Using our cache server instead of direct WordPress API
 			const response = await fetch(
-				`https://cryptoast.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(
+				`${API_CONFIG.BASE_URL}/search?query=${encodeURIComponent(
 					trimmedQuery,
-				)}&page=${pageNumber}&per_page=10&_embed=true`,
+				)}&page=${pageNumber}&per_page=${API_CONFIG.ITEMS_PER_PAGE}`,
 			);
 
 			if (!response.ok) {
@@ -78,16 +67,16 @@ export default function SearchScreen() {
 			}
 
 			const data = await response.json();
-			const articlesArray = Array.isArray(data) ? data : [];
+			const articlesArray = Array.isArray(data.articles) ? data.articles : [];
 
-			const totalPages = Number(response.headers.get("X-WP-TotalPages")) || 1;
+			// Get total pages from response headers or metadata
+			const totalPages = data.totalPages || 1;
 			setHasMore(pageNumber < totalPages);
 
 			if (isLoadingMore) {
 				setArticles((prev) => [...prev, ...articlesArray]);
 			} else {
 				setArticles(articlesArray);
-				await setSearchCache(trimmedQuery, articlesArray);
 			}
 		} catch (error) {
 			console.error("🔴 Search error:", error);
@@ -108,16 +97,20 @@ export default function SearchScreen() {
 	};
 
 	const handleLoadMore = () => {
-		if (loadingMore || !hasMore || articles.length < 10 || !hasSearched) return;
+		if (
+			loadingMore ||
+			!hasMore ||
+			articles.length < API_CONFIG.ITEMS_PER_PAGE ||
+			!hasSearched
+		)
+			return;
 		const nextPage = page + 1;
 		setPage(nextPage);
 		void fetchArticles(nextPage, true);
 	};
 
 	const handleArticlePress = (article: Article) => {
-		// Close the search modal first, then navigate to the article
 		router.back();
-		// Small delay to ensure smooth transition
 		setTimeout(() => {
 			router.push(`/article/${article.id}`);
 		}, 50);
@@ -171,7 +164,7 @@ export default function SearchScreen() {
 			return (
 				<View className="p-4 items-center">
 					<Text className="text-zinc-600 dark:text-zinc-400 text-center text-lg">
-						No results found for "{query}"
+						Aucun résultat pour "{query}"
 					</Text>
 				</View>
 			);

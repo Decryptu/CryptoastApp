@@ -3,12 +3,12 @@ import { View, Share, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchArticle } from "../../services/api";
-import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
 import { ArticleContentSkeleton } from "../../components/ArticleContentSkeleton";
 import { useScrollToTop } from "../../hooks/useScrollToTop";
 import { ArticleModal } from "../../components/ArticleModal";
 import { ArticleView } from "../../components/ArticleView";
+import { API_CONFIG } from "../../config/api";
 
 const extractArticleSlug = (url: string): string | null => {
 	const cleanUrl = url.replace(/\/$/, "");
@@ -21,13 +21,10 @@ export default function ArticleScreen() {
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
-	const scrollViewRef = useRef<ScrollView>(null);
-
-	// Modal state
 	const [modalVisible, setModalVisible] = useState(false);
 	const [modalArticleId, setModalArticleId] = useState<number | null>(null);
+	const scrollViewRef = useRef<ScrollView>(null);
 
-	// Custom hook to scroll to top on article change
 	useScrollToTop(scrollViewRef, id);
 
 	const loadArticle = useCallback(
@@ -38,20 +35,10 @@ export default function ArticleScreen() {
 					`Loading article ${articleId}${forceRefresh ? " (forced refresh)" : ""}`,
 				);
 
-				if (!forceRefresh) {
-					const cachedArticle = await getArticleCache(articleId);
-					if (cachedArticle) {
-						console.log("Using cached article data");
-						setArticle(cachedArticle);
-						setLoading(false);
-						return;
-					}
-				}
-
+				// Now we just fetch directly - caching is handled by the VPS
 				const data = await fetchArticle(articleId);
-				console.log("Fetched fresh article data");
+				console.log("Fetched article data");
 				setArticle(data);
-				await setArticleCache(articleId, data);
 			} catch (error) {
 				console.error("Failed to load article:", error);
 			} finally {
@@ -67,6 +54,7 @@ export default function ArticleScreen() {
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true);
+		// We can add a cache-busting parameter here if needed
 		await loadArticle(true);
 		setRefreshing(false);
 	}, [loadArticle]);
@@ -91,7 +79,7 @@ export default function ArticleScreen() {
 				try {
 					console.log("Fetching article by slug:", slug);
 					const response = await fetch(
-						`https://cryptoast.fr/wp-json/wp/v2/posts?slug=${slug}`,
+						`${API_CONFIG.BASE_URL}/articles?slug=${slug}`,
 					);
 					const articles = await response.json();
 					if (articles && articles.length > 0) {

@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { getArticlesCache, setArticlesCache } from "../services/ArticleCache";
+import { API_CONFIG } from "../config/api";
 import type { Article } from "../types/article";
-
-const ITEMS_PER_PAGE = 10;
 
 interface UseArticlesProps {
 	fetchArticles: (
@@ -28,32 +26,23 @@ export function useArticles({
 
 	const fetchArticlesData = useCallback(
 		async (page: number, forceRefresh = false) => {
-			const cacheKey = `${logLabel}-${selectedCategory || "all"}-page-${page}`;
 			console.log(
 				`🔍 Loading page ${page} of articles for category: ${selectedCategory || "all"}`,
 			);
 
-			if (!forceRefresh) {
-				const cachedArticles = await getArticlesCache(cacheKey);
-				if (cachedArticles) {
-					console.log(`📦 Using cached articles for ${cacheKey}`);
-					return cachedArticles;
-				}
-			}
-
-			console.log(`🔄 Fetching fresh articles for ${cacheKey}`);
+			// If forceRefresh is true, we can add a cache-busting query parameter
 			const data = await fetchArticles(
 				page,
-				ITEMS_PER_PAGE,
+				API_CONFIG.ITEMS_PER_PAGE,
 				selectedCategory || undefined,
 			);
+
 			console.log(`✅ Fetched ${data.length} ${logLabel} for page ${page}`);
 
-			if (data.length < ITEMS_PER_PAGE) {
+			if (data.length < API_CONFIG.ITEMS_PER_PAGE) {
 				setHasMoreArticles(false);
 			}
 
-			await setArticlesCache(cacheKey, data);
 			return data;
 		},
 		[fetchArticles, logLabel, selectedCategory],
@@ -66,7 +55,7 @@ export function useArticles({
 				const data = await fetchArticlesData(1, forceRefresh);
 				setArticles(data);
 				setCurrentPage(1);
-				setHasMoreArticles(data.length === ITEMS_PER_PAGE);
+				setHasMoreArticles(data.length === API_CONFIG.ITEMS_PER_PAGE);
 			} catch (error) {
 				console.error(`❌ Failed to load ${logLabel}:`, error);
 			} finally {
@@ -87,7 +76,7 @@ export function useArticles({
 			setArticles((prev) => [...prev, ...newArticles]);
 			setCurrentPage((prev) => prev + 1);
 
-			if (newArticles.length < ITEMS_PER_PAGE) {
+			if (newArticles.length < API_CONFIG.ITEMS_PER_PAGE) {
 				setHasMoreArticles(false);
 				console.log("📪 No more articles to load");
 			}
