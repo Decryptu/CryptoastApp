@@ -50,6 +50,8 @@ export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
 	const panGesture = useMemo(
 		() =>
 			Gesture.Pan()
+				.activeOffsetX([-20, 20]) // Only activate after 20px horizontal movement
+				.failOffsetY([-20, 20]) // Fail gesture if vertical movement exceeds 20px
 				.onChange((event) => {
 					translateX.value += event.changeX;
 				})
