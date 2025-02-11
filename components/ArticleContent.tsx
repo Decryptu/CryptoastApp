@@ -3,47 +3,26 @@ import {
 	useWindowDimensions,
 	Linking,
 	View,
+	Text,
 	useColorScheme,
 	type GestureResponderEvent,
+	StyleSheet,
 } from "react-native";
 import RenderHTML, {
 	type MixedStyleDeclaration,
 	type RenderersProps,
 	HTMLElementModel,
+	HTMLContentModel,
 } from "react-native-render-html";
 import type { Element as DOMElement } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
-
-enum HTMLContentModel {
-	block = "block",
-	textual = "textual",
-	mixed = "mixed",
-	none = "none",
-}
+import { CTAButton } from "./CTAButton";
 
 interface ArticleContentProps {
 	content: string;
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
-
-type TextStyle = {
-	fontSize: number;
-	fontWeight:
-		| "100"
-		| "200"
-		| "300"
-		| "400"
-		| "500"
-		| "600"
-		| "700"
-		| "800"
-		| "900"
-		| "bold"
-		| "normal";
-	marginVertical: number;
-	color: string;
-};
 
 export const ArticleContent: FC<ArticleContentProps> = ({
 	content,
@@ -54,12 +33,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Memoize custom element models
+	// Register custom models for non-standard tags (using literal "block")
 	const customHTMLElementModels = useMemo(
 		() => ({
 			iframe: HTMLElementModel.fromCustomModel({
 				tagName: "iframe",
-				contentModel: HTMLContentModel.block,
+				contentModel: HTMLContentModel.block, // use the enum value here
 				isVoid: false,
 				isOpaque: false,
 			}),
@@ -71,7 +50,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[],
 	);
 
-	// Memoize theme colors
+	// Theme colors based on light/dark mode
 	const themeColors = useMemo(
 		() => ({
 			text: isDark ? colors.zinc[100] : colors.zinc[900],
@@ -82,8 +61,8 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[isDark],
 	);
 
-	// Memoize styles
-	const styles = useMemo(
+	// Memoized styles for images and video container
+	const stylesMemo = useMemo(
 		() => ({
 			image: {
 				width: "100%",
@@ -102,7 +81,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[],
 	);
 
-	// Memoize tag styles
+	// Tag styles for RenderHTML
 	const tagsStyles = useMemo(
 		() => ({
 			h1: {
@@ -149,7 +128,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 				borderLeftColor: themeColors.blockquoteBorder,
 				color: themeColors.blockquoteText,
 			} as MixedStyleDeclaration,
-			img: styles.image,
+			img: stylesMemo.image,
 			figure: {
 				marginVertical: 8,
 				alignSelf: "center",
@@ -172,12 +151,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 				color: themeColors.text,
 				marginVertical: 2,
 			} as MixedStyleDeclaration,
-			"div.vidcontainer": styles.videoContainer,
+			"div.vidcontainer": stylesMemo.videoContainer,
 		}),
-		[themeColors, styles],
+		[themeColors, stylesMemo],
 	);
 
-	// Memoize YouTube renderer
+	// Custom renderer for YouTube iframes
 	const YouTubeIframeRenderer = useCallback<FC<RenderersProps["iframe"]>>(
 		({ tnode }) => {
 			const src = tnode.attributes.src;
@@ -207,11 +186,10 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[contentWidth],
 	);
 
-	// Memoize link handler
+	// Default link press handling for non-CTA links
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			if (!href) return;
-
 			if (
 				href.includes("cryptoast.fr") &&
 				!href.includes("/go-") &&
@@ -225,20 +203,106 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[onInternalLinkPress],
 	);
 
-	// Memoize renderers props
+	// Renderer props for images and links
 	const renderersProps = useMemo(
 		() => ({
-			a: { onPress: handleLinkPress },
 			img: {
 				enableExperimentalPercentWidth: true,
 				initialDimensions: { width: contentWidth, height: 200 },
+			},
+			a: {
+				onPress: handleLinkPress,
 			},
 		}),
 		[handleLinkPress, contentWidth],
 	);
 
+	// ── CUSTOM RENDERERS ──
+	// ...
+	// Helper function to recursively extract text content from a node.
+	const extractText = (node: any): string => {
+		if (!node) return "";
+		if (node.data) return node.data;
+		if (node.children && node.children.length > 0) {
+			return node.children.map(extractText).join("");
+		}
+		return "";
+	};
+
+	// Custom renderer for <a> tags to handle CTA buttons (class "btn4")
+	const CustomAnchorRenderer = ({ tnode, TDefaultRenderer, ...props }: any) => {
+		if (tnode?.classes?.includes("btn4")) {
+			console.log("Rendering CTA button:", tnode);
+			let gradientColors: readonly [string, string, ...string[]] = [
+				"#000000",
+				"#000000",
+			];
+			let buttonText = "";
+			if (tnode.children && tnode.children.length > 0) {
+				// Look for the inner <span> node
+				const spanNode = tnode.children.find(
+					(child: any) => child.tagName === "span",
+				);
+				if (spanNode) {
+					// Extract the inline style for the gradient
+					const styleAttr = spanNode.attributes?.style;
+					if (styleAttr) {
+						const regex =
+							/linear-gradient\(to right,\s*(#[0-9A-Fa-f]{6}),\s*(#[0-9A-Fa-f]{6})\)/;
+						const match = regex.exec(styleAttr);
+						if (match) {
+							gradientColors = [match[1], match[2]];
+							console.log("Extracted gradient colors:", gradientColors);
+						}
+					}
+					// Recursively extract text from the span node
+					buttonText = extractText(spanNode);
+					console.log("Extracted button text:", buttonText);
+				}
+			}
+			const href = tnode.attributes?.href || "";
+			return (
+				<CTAButton
+					gradientColors={gradientColors}
+					text={buttonText}
+					href={href}
+				/>
+			);
+		}
+		return <TDefaultRenderer tnode={tnode} {...props} />;
+	};
+
+	// Custom renderer for <div> tags to handle publicity text (class "blcatt")
+	const CustomDivRenderer = ({ tnode, TDefaultRenderer, ...props }: any) => {
+		if (tnode?.classes?.includes("blcatt")) {
+			console.log("Rendering publicity text:", tnode);
+			let adText = "";
+			if (tnode.children && tnode.children.length > 0) {
+				adText = tnode.children.map((child: any) => child.data || "").join("");
+			}
+			return <Text style={customDivStyles.adText}>{adText}</Text>;
+		}
+		return <TDefaultRenderer tnode={tnode} {...props} />;
+	};
+
+	// Styles specific to publicity text
+	const customDivStyles = StyleSheet.create({
+		adText: {
+			fontSize: 12,
+			color: "grey",
+			textAlign: "center",
+			marginVertical: 4,
+		},
+	});
+
+	const customRenderers = {
+		a: CustomAnchorRenderer,
+		div: CustomDivRenderer,
+		iframe: YouTubeIframeRenderer,
+	};
+
 	return (
-		<View className="flex-1">
+		<View style={{ flex: 1 }}>
 			<RenderHTML
 				contentWidth={contentWidth}
 				source={{ html: content }}
@@ -256,9 +320,7 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 				customHTMLElementModels={customHTMLElementModels}
 				enableExperimentalBRCollapsing
 				enableExperimentalGhostLinesPrevention
-				renderers={{
-					iframe: YouTubeIframeRenderer,
-				}}
+				renderers={customRenderers}
 				renderersProps={renderersProps}
 				baseStyle={{ color: themeColors.text, fontSize: 16 }}
 				tagsStyles={tagsStyles}
