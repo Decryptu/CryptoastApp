@@ -105,11 +105,11 @@ export function ArticleList({
 
 	const renderSkeletonSet = useCallback(
 		(skeletonIds: readonly string[]) => (
-			<View className={`flex-row flex-wrap ${isTablet ? "px-2" : "px-0"}`}>
+			<View className={`flex-row flex-wrap ${isTablet ? "px-2" : "px-0 pt-4"}`}>
 				{skeletonIds.map((skeletonId) => (
 					<View
 						key={skeletonId}
-						className={`${isTablet ? "w-1/2 p-2" : "w-full p-4"}`}
+						className={`${isTablet ? "w-1/2 p-2" : "w-full px-4 py-0"}`}
 					>
 						<ArticleSkeleton />
 					</View>
