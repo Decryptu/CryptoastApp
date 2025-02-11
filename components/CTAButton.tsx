@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-// Require at least two colors as a readonly tuple.
 interface CTAButtonProps {
 	gradientColors: readonly [string, string, ...string[]];
 	text: string;
@@ -21,7 +20,6 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
 	href,
 }) => {
 	const onPress = async () => {
-		console.log("CTAButton pressed, opening:", href);
 		await Linking.openURL(href);
 	};
 
@@ -55,5 +53,6 @@ const styles = StyleSheet.create({
 		color: "#fff",
 		fontSize: 16,
 		textAlign: "center",
+		fontWeight: "bold",
 	},
 });

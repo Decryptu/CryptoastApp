@@ -16,7 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import colors from "tailwindcss/colors";
 import { useState, useMemo, useRef, type FC } from "react";
 import type { Article } from "../types/article";
-import { ArticleContent } from "./ArticleContent";
+import ArticleContent from "./ArticleContent";
 import { ScrollToTopButton } from "./ScrollToTopButton";
 
 interface ArticleViewProps {

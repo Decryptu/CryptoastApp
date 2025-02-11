@@ -1,4 +1,5 @@
-import React, { type FC, useCallback, useMemo } from "react";
+import type React from "react";
+import { type FC, useCallback, useMemo } from "react"
 import {
 	useWindowDimensions,
 	Linking,
@@ -19,12 +20,30 @@ import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
 import { CTAButton } from "./CTAButton";
 
+// Minimal TNode type definition
+interface TNode {
+	data?: string;
+	tagName?: string;
+	attributes?: Record<string, string>;
+	children?: TNode[];
+	classes?: string[];
+}
+
+// Custom renderer props interface
+interface CustomRendererProps {
+	tnode: TNode;
+	TDefaultRenderer: React.ComponentType<
+		{ tnode: TNode } & Record<string, unknown>
+	>;
+	[key: string]: unknown;
+}
+
 interface ArticleContentProps {
 	content: string;
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
 
-export const ArticleContent: FC<ArticleContentProps> = ({
+const ArticleContent: FC<ArticleContentProps> = ({
 	content,
 	onInternalLinkPress,
 }) => {
@@ -33,12 +52,12 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Register custom models for non-standard tags (using literal "block")
+	// Register custom models for non-standard tags
 	const customHTMLElementModels = useMemo(
 		() => ({
 			iframe: HTMLElementModel.fromCustomModel({
 				tagName: "iframe",
-				contentModel: HTMLContentModel.block, // use the enum value here
+				contentModel: HTMLContentModel.block,
 				isVoid: false,
 				isOpaque: false,
 			}),
@@ -50,7 +69,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[],
 	);
 
-	// Theme colors based on light/dark mode
 	const themeColors = useMemo(
 		() => ({
 			text: isDark ? colors.zinc[100] : colors.zinc[900],
@@ -61,7 +79,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[isDark],
 	);
 
-	// Memoized styles for images and video container
 	const stylesMemo = useMemo(
 		() => ({
 			image: {
@@ -81,7 +98,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[],
 	);
 
-	// Tag styles for RenderHTML
 	const tagsStyles = useMemo(
 		() => ({
 			h1: {
@@ -156,16 +172,13 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[themeColors, stylesMemo],
 	);
 
-	// Custom renderer for YouTube iframes
-	const YouTubeIframeRenderer = useCallback<FC<RenderersProps["iframe"]>>(
+	const YouTubeIframeRenderer = useCallback<RenderersProps["iframe"]>(
 		({ tnode }) => {
 			const src = tnode.attributes.src;
 			if (!src) return null;
-
 			const isYouTube =
 				src.includes("youtube.com/embed") || src.includes("youtu.be");
 			if (!isYouTube) return null;
-
 			const uri = src.startsWith("//") ? `https:${src}` : src;
 			const videoHeight = (contentWidth * 9) / 16;
 
@@ -186,7 +199,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[contentWidth],
 	);
 
-	// Default link press handling for non-CTA links
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			if (!href) return;
@@ -203,7 +215,6 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[onInternalLinkPress],
 	);
 
-	// Renderer props for images and links
 	const renderersProps = useMemo(
 		() => ({
 			img: {
@@ -217,11 +228,8 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		[handleLinkPress, contentWidth],
 	);
 
-	// ── CUSTOM RENDERERS ──
-	// ...
-	// Helper function to recursively extract text content from a node.
-	const extractText = (node: any): string => {
-		if (!node) return "";
+	// Helper function to recursively extract text from a TNode
+	const extractText = (node: TNode): string => {
 		if (node.data) return node.data;
 		if (node.children && node.children.length > 0) {
 			return node.children.map(extractText).join("");
@@ -229,22 +237,22 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		return "";
 	};
 
-	// Custom renderer for <a> tags to handle CTA buttons (class "btn4")
-	const CustomAnchorRenderer = ({ tnode, TDefaultRenderer, ...props }: any) => {
+	const CustomAnchorRenderer: React.FC<CustomRendererProps> = ({
+		tnode,
+		TDefaultRenderer,
+		...props
+	}) => {
 		if (tnode?.classes?.includes("btn4")) {
-			console.log("Rendering CTA button:", tnode);
 			let gradientColors: readonly [string, string, ...string[]] = [
 				"#000000",
 				"#000000",
 			];
 			let buttonText = "";
 			if (tnode.children && tnode.children.length > 0) {
-				// Look for the inner <span> node
 				const spanNode = tnode.children.find(
-					(child: any) => child.tagName === "span",
+					(child) => child.tagName === "span",
 				);
 				if (spanNode) {
-					// Extract the inline style for the gradient
 					const styleAttr = spanNode.attributes?.style;
 					if (styleAttr) {
 						const regex =
@@ -252,12 +260,9 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 						const match = regex.exec(styleAttr);
 						if (match) {
 							gradientColors = [match[1], match[2]];
-							console.log("Extracted gradient colors:", gradientColors);
 						}
 					}
-					// Recursively extract text from the span node
 					buttonText = extractText(spanNode);
-					console.log("Extracted button text:", buttonText);
 				}
 			}
 			const href = tnode.attributes?.href || "";
@@ -272,20 +277,21 @@ export const ArticleContent: FC<ArticleContentProps> = ({
 		return <TDefaultRenderer tnode={tnode} {...props} />;
 	};
 
-	// Custom renderer for <div> tags to handle publicity text (class "blcatt")
-	const CustomDivRenderer = ({ tnode, TDefaultRenderer, ...props }: any) => {
+	const CustomDivRenderer: React.FC<CustomRendererProps> = ({
+		tnode,
+		TDefaultRenderer,
+		...props
+	}) => {
 		if (tnode?.classes?.includes("blcatt")) {
-			console.log("Rendering publicity text:", tnode);
 			let adText = "";
 			if (tnode.children && tnode.children.length > 0) {
-				adText = tnode.children.map((child: any) => child.data || "").join("");
+				adText = tnode.children.map((child) => child.data || "").join("");
 			}
 			return <Text style={customDivStyles.adText}>{adText}</Text>;
 		}
 		return <TDefaultRenderer tnode={tnode} {...props} />;
 	};
 
-	// Styles specific to publicity text
 	const customDivStyles = StyleSheet.create({
 		adText: {
 			fontSize: 12,
