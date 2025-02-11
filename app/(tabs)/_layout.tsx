@@ -4,49 +4,38 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { TAB_ROUTES } from "../../constants/routes";
 import colors from "tailwindcss/colors";
-import { createRef } from "react";
-import type { FlatList } from "react-native";
-
-// Type definition for scroll references for each tab
-type ScrollRefs = {
-	[key: string]: React.RefObject<FlatList>;
-};
-
-// Initialize scroll references for each tab
-export const tabScrollRefs: ScrollRefs = {};
-
-for (const route of TAB_ROUTES) {
-	tabScrollRefs[route.name] = createRef<FlatList>();
-}
+import { ScrollEvents } from "../../utils/events";
 
 export default function TabLayout() {
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 	const router = useRouter();
 
-	// Function to handle tab press and scroll to top if already active
 	const handleTabPress = (name: string, isActive: boolean) => {
 		if (isActive) {
-			const scrollRef = tabScrollRefs[name];
-			if (scrollRef.current) {
-				scrollRef.current.scrollToOffset({ offset: 0, animated: true });
-			}
+			ScrollEvents.scrollToTop(name.toLowerCase());
 		}
 	};
 
 	return (
 		<Tabs
-			initialRouteName="news"
 			screenOptions={{
+				// Reuse the same header style as root layout
 				headerStyle: {
 					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 				},
 				headerTitleStyle: {
 					color: isDark ? colors.white : colors.zinc[800],
+					fontSize: 18,
+					fontWeight: "500",
 				},
-				headerTitleAlign: "left", // Align header title to the left
+				headerTitleAlign: "left",
 				headerRight: () => (
-					<Pressable onPress={() => router.push("/search")} className="pr-4">
+					<Pressable
+						onPress={() => router.push("/search")}
+						className="pr-4"
+						hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+					>
 						<Feather
 							name="search"
 							size={24}
@@ -54,6 +43,8 @@ export default function TabLayout() {
 						/>
 					</Pressable>
 				),
+				headerShadowVisible: false,
+				// Tab bar styling
 				tabBarStyle: {
 					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 					borderTopColor: isDark ? colors.zinc[700] : colors.zinc[200],

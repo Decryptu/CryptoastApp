@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Share, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchArticle } from "../../services/api";
 import { getArticleCache, setArticleCache } from "../../services/ArticleCache";
 import type { Article } from "../../types/article";
@@ -17,10 +17,7 @@ const extractArticleSlug = (url: string): string | null => {
 };
 
 export default function ArticleScreen() {
-	const { id, presentedFromSearch } = useLocalSearchParams<{
-		id: string;
-		presentedFromSearch?: string;
-	}>();
+	const { id } = useLocalSearchParams<{ id: string }>();
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -111,15 +108,10 @@ export default function ArticleScreen() {
 		[],
 	);
 
-	const isFromSearch = presentedFromSearch === "true";
-	const safeAreaEdges: Edge[] = isFromSearch
-		? ["bottom"]
-		: ["top", "right", "bottom", "left"];
-
 	return (
 		<SafeAreaView
 			className="flex-1 bg-white dark:bg-zinc-900"
-			edges={safeAreaEdges}
+			edges={["right", "bottom", "left"]}
 		>
 			<View className="flex-1 bg-white dark:bg-zinc-900">
 				{loading ? (
@@ -132,7 +124,6 @@ export default function ArticleScreen() {
 						onShare={handleShare}
 						onInternalLinkPress={handleInternalLinkPress}
 						scrollViewRef={scrollViewRef}
-						isModal={isFromSearch}
 					/>
 				) : null}
 

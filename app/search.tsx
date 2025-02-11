@@ -7,10 +7,10 @@ import {
 	ActivityIndicator,
 	Text,
 	Platform,
+	useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useColorScheme } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ArticleCard } from "../components/ArticleCard";
 import { ArticleSkeleton } from "../components/ArticleSkeleton";
@@ -31,11 +31,11 @@ export default function SearchScreen() {
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
+	// Focus search input on mount
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			searchInputRef.current?.focus();
 		}, 100);
-
 		return () => clearTimeout(timeoutId);
 	}, []);
 
@@ -50,6 +50,7 @@ export default function SearchScreen() {
 		}
 
 		try {
+			// Check cache for first page only
 			if (pageNumber === 1) {
 				const cachedResults = await getSearchCache(trimmedQuery);
 				if (cachedResults) {
@@ -114,10 +115,12 @@ export default function SearchScreen() {
 	};
 
 	const handleArticlePress = (article: Article) => {
-		router.push({
-			pathname: `/article/${article.id}`,
-			params: { presentedFromSearch: "true" },
-		});
+		// Close the search modal first, then navigate to the article
+		router.back();
+		// Small delay to ensure smooth transition
+		setTimeout(() => {
+			router.push(`/article/${article.id}`);
+		}, 50);
 	};
 
 	const handleClearSearch = () => {
@@ -130,17 +133,16 @@ export default function SearchScreen() {
 	};
 
 	const renderFooter = () => {
-		if (loadingMore) {
-			return (
-				<View className="py-4 flex-row justify-center">
-					<ActivityIndicator
-						size="large"
-						color={isDark ? colors.white : colors.black}
-					/>
-				</View>
-			);
-		}
-		return null;
+		if (!loadingMore) return null;
+
+		return (
+			<View className="py-4 flex-row justify-center">
+				<ActivityIndicator
+					size="large"
+					color={isDark ? colors.white : colors.black}
+				/>
+			</View>
+		);
 	};
 
 	const renderEmpty = () => {
@@ -169,7 +171,7 @@ export default function SearchScreen() {
 			return (
 				<View className="p-4 items-center">
 					<Text className="text-zinc-600 dark:text-zinc-400 text-center text-lg">
-						Aucun résultat trouvé pour "{query}"
+						No results found for "{query}"
 					</Text>
 				</View>
 			);
@@ -192,7 +194,7 @@ export default function SearchScreen() {
 					<TextInput
 						ref={searchInputRef}
 						className="flex-1 text-zinc-900 dark:text-white ml-2"
-						placeholder="Rechercher..."
+						placeholder="Search..."
 						placeholderTextColor={isDark ? colors.zinc[400] : colors.zinc[500]}
 						value={query}
 						onChangeText={setQuery}
@@ -217,7 +219,7 @@ export default function SearchScreen() {
 			<FlatList
 				data={articles}
 				keyExtractor={(item) => item.id.toString()}
-				numColumns={Platform.OS === "ios" && Platform.isPad ? 2 : 1} // Two columns for iPad
+				numColumns={Platform.OS === "ios" && Platform.isPad ? 2 : 1}
 				renderItem={({ item }) => (
 					<View className="flex-1 p-2">
 						<ArticleCard

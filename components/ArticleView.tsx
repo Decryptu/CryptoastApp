@@ -17,7 +17,6 @@ import colors from "tailwindcss/colors";
 import { useState, useMemo, useRef, type FC } from "react";
 import type { Article } from "../types/article";
 import { ArticleContent } from "./ArticleContent";
-import { ArticleHeader } from "./ArticleHeader";
 import { ScrollToTopButton } from "./ScrollToTopButton";
 
 interface ArticleViewProps {
@@ -168,7 +167,6 @@ export const ArticleView: FC<ArticleViewProps> = ({
 				isModal ? { paddingBottom: Platform.OS === "ios" ? 20 : 16 } : undefined
 			}
 		>
-			{!isModal && <ArticleHeader />}
 			{content}
 		</ScrollView>
 	);

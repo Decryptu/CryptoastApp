@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useEffect } from "react";
 import {
 	View,
 	FlatList,
@@ -12,9 +12,9 @@ import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { ArticleCard } from "./ArticleCard";
 import { ArticleSkeleton } from "./ArticleSkeleton";
+import { ScrollEvents } from "../utils/events";
 import type { Article } from "../types/article";
 import type { ReanimatedStyle, GestureType } from "../types/animation";
-import { tabScrollRefs } from "../app/(tabs)/_layout";
 import colors from "tailwindcss/colors";
 
 interface ArticleListProps {
@@ -31,7 +31,6 @@ interface ArticleListProps {
 
 const NUM_SKELETONS = 10;
 
-// Create unique identifiers for skeletons
 const SKELETON_IDS = {
 	MAIN: Array.from({ length: NUM_SKELETONS }, (_, i) => `skeleton-main-${i}`),
 	LEFT: Array.from({ length: NUM_SKELETONS }, (_, i) => `skeleton-left-${i}`),
@@ -49,6 +48,7 @@ export function ArticleList({
 	panGesture,
 	animatedStyle,
 }: ArticleListProps) {
+	const listRef = useRef<FlatList>(null);
 	const router = useRouter();
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
@@ -56,6 +56,14 @@ export function ArticleList({
 
 	const isTablet = width >= 768;
 	const numColumns = isTablet ? 2 : 1;
+
+	// Register scroll ref when component mounts
+	useEffect(() => {
+		ScrollEvents.register(section.toLowerCase(), listRef);
+		return () => {
+			ScrollEvents.unregister(section.toLowerCase());
+		};
+	}, [section]);
 
 	const handleArticlePress = useCallback(
 		(article: Article) => {
@@ -71,7 +79,7 @@ export function ArticleList({
 		(props: { item: Article; index: number }) => (
 			<View
 				className={`${isTablet ? "w-1/2 p-2" : "w-full"}
-			${props.index === 0 ? "mt-4" : ""}`}
+        ${props.index === 0 ? "mt-4" : ""}`}
 			>
 				<ArticleCard
 					article={props.item}
@@ -137,7 +145,7 @@ export function ArticleList({
 				</Animated.View>
 
 				<FlatList
-					ref={tabScrollRefs[section.toLowerCase()]}
+					ref={listRef}
 					data={articles}
 					keyExtractor={(item) => item.id.toString()}
 					renderItem={renderItem}

@@ -1,16 +1,9 @@
 import { Stack } from "expo-router";
-import { useColorScheme, Platform } from "react-native";
+import { useColorScheme, Pressable } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import colors from "tailwindcss/colors";
 import "../global.css";
-import { Pressable, Text } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
-
-interface ArticleScreenParams {
-	id: string;
-	presentedFromSearch?: string;
-}
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
@@ -20,67 +13,60 @@ export default function RootLayout() {
 	return (
 		<Stack
 			screenOptions={{
-				headerShown: false,
-				contentStyle: {
+				headerStyle: {
 					backgroundColor: isDark ? colors.zinc[900] : colors.white,
 				},
+				headerTitleStyle: {
+					color: isDark ? colors.white : colors.zinc[800],
+					fontSize: 18,
+					fontWeight: "500",
+				},
+				headerTitleAlign: "left",
+				headerRight: () => (
+					<Pressable
+						onPress={() => router.push("/search")}
+						className="pr-4"
+						hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+					>
+						<Feather
+							name="search"
+							size={24}
+							color={isDark ? colors.white : colors.zinc[800]}
+						/>
+					</Pressable>
+				),
+				// Clean up header appearance
+				headerShadowVisible: false,
+				// Customize back button
+				headerBackTitle: "Retour",
+				headerTintColor: colors.amber[500], // Using Tailwind amber color
 			}}
 		>
+			{/* Main tab navigation */}
 			<Stack.Screen
 				name="(tabs)"
 				options={{
-					headerShown: Platform.select({
-						android: true,
-						ios: false,
-					}),
-					headerTitle: "",
+					headerShown: false, // Hide header here since tabs handle their own headers
 				}}
 			/>
 
+			{/* Modal screens */}
 			<Stack.Screen
 				name="search"
 				options={{
 					headerShown: false,
-					presentation:
-						Platform.OS === "ios" && Platform.isPad
-							? "fullScreenModal"
-							: "modal",
+					presentation: "modal",
 				}}
 			/>
 
+			{/* Article screen */}
 			<Stack.Screen
 				name="article/[id]"
-				options={({ route }): NativeStackNavigationOptions => {
-					const { presentedFromSearch } = route.params as ArticleScreenParams;
-					const isFromSearch = presentedFromSearch === "true";
-
-					const presentation: NativeStackNavigationOptions["presentation"] =
-						isFromSearch && Platform.OS === "ios" && Platform.isPad
-							? "fullScreenModal"
-							: isFromSearch
-								? "modal"
-								: "card";
-
-					return {
-						title: "",
-						headerShown:
-							Platform.OS === "ios" && Platform.isPad && isFromSearch,
-						presentation,
-						headerLeft: () =>
-							Platform.OS === "ios" && Platform.isPad ? (
-								<Pressable
-									onPress={() => router.back()}
-									className="flex-row items-center px-3"
-								>
-									<Ionicons
-										name="arrow-back"
-										size={20}
-										color={colors.zinc[600]}
-									/>
-									<Text className="ml-2 text-zinc-600">Retour</Text>
-								</Pressable>
-							) : null,
-					};
+				options={{
+					headerTitle: "",
+					presentation: "card",
+					headerBackTitle: "Retour",
+					headerTintColor: colors.amber[500], // Using Tailwind amber color
 				}}
 			/>
 		</Stack>
