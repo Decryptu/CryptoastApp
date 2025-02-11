@@ -55,7 +55,10 @@ export default function RootLayout() {
 				name="search"
 				options={{
 					headerShown: false,
-					presentation: "modal",
+					presentation:
+						Platform.OS === "ios" && Platform.isPad
+							? "fullScreenModal"
+							: "modal",
 				}}
 			/>
 
