@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useColorScheme, Pressable } from "react-native";
+import { useColorScheme, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import colors from "tailwindcss/colors";
@@ -46,7 +46,7 @@ export default function RootLayout() {
 			<Stack.Screen
 				name="(tabs)"
 				options={{
-					headerShown: false, // Hide header here since tabs handle their own headers
+					headerShown: Platform.OS === "android", // This will be true on Android and false on iOS
 				}}
 			/>
 
