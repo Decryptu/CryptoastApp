@@ -1,5 +1,4 @@
-import type React from "react";
-import { type FC, useCallback, useMemo } from "react"
+import React, { type FC, useCallback, useMemo } from "react";
 import {
 	useWindowDimensions,
 	Linking,
@@ -10,38 +9,42 @@ import {
 	StyleSheet,
 } from "react-native";
 import RenderHTML, {
-	type MixedStyleDeclaration,
-	type RenderersProps,
-	HTMLElementModel,
+	type TNode,
+	type TText,
+	type CustomMixedRenderer,
+	type CustomBlockRenderer,
 	HTMLContentModel,
+	HTMLElementModel,
+	type MixedStyleDeclaration,
 } from "react-native-render-html";
 import type { Element as DOMElement } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
 import { CTAButton } from "./CTAButton";
 
-// Minimal TNode type definition
-interface TNode {
-	data?: string;
-	tagName?: string;
-	attributes?: Record<string, string>;
-	children?: TNode[];
-	classes?: string[];
-}
-
-// Custom renderer props interface
-interface CustomRendererProps {
-	tnode: TNode;
-	TDefaultRenderer: React.ComponentType<
-		{ tnode: TNode } & Record<string, unknown>
-	>;
-	[key: string]: unknown;
-}
-
 interface ArticleContentProps {
 	content: string;
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
+
+/**
+ * Type guard to determine if a TNode is a text node.
+ * TText is a subtype of TNode that has a "data" property.
+ */
+const isTextTNode = (node: TNode): node is TText => {
+	return typeof (node as TText).data === "string";
+};
+
+/**
+ * Recursively extract text from a TNode.
+ */
+const extractText = (node: TNode): string => {
+	if (isTextTNode(node)) return node.data;
+	if (node.children && node.children.length > 0) {
+		return node.children.map(extractText).join("");
+	}
+	return "";
+};
 
 const ArticleContent: FC<ArticleContentProps> = ({
 	content,
@@ -52,7 +55,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Register custom models for non-standard tags
+	// Define custom element models using the library’s HTMLContentModel enum.
 	const customHTMLElementModels = useMemo(
 		() => ({
 			iframe: HTMLElementModel.fromCustomModel({
@@ -172,32 +175,30 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		[themeColors, stylesMemo],
 	);
 
-	const YouTubeIframeRenderer = useCallback<RenderersProps["iframe"]>(
-		({ tnode }) => {
-			const src = tnode.attributes.src;
-			if (!src) return null;
-			const isYouTube =
-				src.includes("youtube.com/embed") || src.includes("youtu.be");
-			if (!isYouTube) return null;
-			const uri = src.startsWith("//") ? `https:${src}` : src;
-			const videoHeight = (contentWidth * 9) / 16;
+	// Custom renderer for YouTube iframes (block-level).
+	const YouTubeIframeRenderer: CustomBlockRenderer = ({ tnode }) => {
+		const src = tnode.attributes?.src;
+		if (!src) return null;
+		const isYouTube =
+			src.includes("youtube.com/embed") || src.includes("youtu.be");
+		if (!isYouTube) return null;
+		const uri = src.startsWith("//") ? `https:${src}` : src;
+		const videoHeight = (contentWidth * 9) / 16;
 
-			return (
-				<WebView
-					source={{ uri }}
-					style={{
-						width: contentWidth,
-						height: videoHeight,
-						marginVertical: 8,
-					}}
-					allowsFullscreenVideo
-					javaScriptEnabled
-					scalesPageToFit
-				/>
-			);
-		},
-		[contentWidth],
-	);
+		return (
+			<WebView
+				source={{ uri }}
+				style={{
+					width: contentWidth,
+					height: videoHeight,
+					marginVertical: 8,
+				}}
+				allowsFullscreenVideo
+				javaScriptEnabled
+				scalesPageToFit
+			/>
+		);
+	};
 
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
@@ -228,21 +229,13 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		[handleLinkPress, contentWidth],
 	);
 
-	// Helper function to recursively extract text from a TNode
-	const extractText = (node: TNode): string => {
-		if (node.data) return node.data;
-		if (node.children && node.children.length > 0) {
-			return node.children.map(extractText).join("");
-		}
-		return "";
-	};
-
-	const CustomAnchorRenderer: React.FC<CustomRendererProps> = ({
+	// Custom renderer for <a> tags with class "btn4" (mixed-level).
+	const CustomAnchorRenderer: CustomMixedRenderer = ({
 		tnode,
 		TDefaultRenderer,
 		...props
 	}) => {
-		if (tnode?.classes?.includes("btn4")) {
+		if (tnode.classes?.includes("btn4")) {
 			let gradientColors: readonly [string, string, ...string[]] = [
 				"#000000",
 				"#000000",
@@ -277,16 +270,16 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		return <TDefaultRenderer tnode={tnode} {...props} />;
 	};
 
-	const CustomDivRenderer: React.FC<CustomRendererProps> = ({
+	// Custom renderer for <div> tags with class "blcatt" (block-level).
+	const CustomDivRenderer: CustomBlockRenderer = ({
 		tnode,
 		TDefaultRenderer,
 		...props
 	}) => {
-		if (tnode?.classes?.includes("blcatt")) {
-			let adText = "";
-			if (tnode.children && tnode.children.length > 0) {
-				adText = tnode.children.map((child) => child.data || "").join("");
-			}
+		if (tnode.classes?.includes("blcatt")) {
+			const adText = tnode.children
+				? tnode.children.map(extractText).join("")
+				: "";
 			return <Text style={customDivStyles.adText}>{adText}</Text>;
 		}
 		return <TDefaultRenderer tnode={tnode} {...props} />;
