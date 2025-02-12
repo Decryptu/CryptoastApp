@@ -24,7 +24,6 @@ export default function RootLayout() {
 		headerRight: () => (
 			<Pressable
 				onPress={() => router.push("/search")}
-				className="pr-4"
 				hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 			>
 				<Feather
@@ -34,9 +33,27 @@ export default function RootLayout() {
 				/>
 			</Pressable>
 		),
-		headerShadowVisible: false,
+		headerLeft:
+			Platform.OS === "android"
+				? () => (
+						<Pressable
+							onPress={() => router.back()}
+							className="ml-2"
+							hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+						>
+							<Feather
+								name="chevron-left"
+								size={24}
+								color={colors.amber[500]}
+							/>
+						</Pressable>
+					)
+				: undefined,
 		headerBackTitle: Platform.OS === "ios" ? "Retour" : undefined,
 		headerTintColor: colors.amber[500],
+		headerShadowVisible: false,
+		// Disable the default back button on Android
+		headerBackVisible: Platform.OS === "ios",
 	};
 
 	return (
@@ -71,7 +88,6 @@ export default function RootLayout() {
 					headerTitle: "",
 					presentation: "card",
 					headerShown: true,
-					headerBackVisible: true,
 				}}
 			/>
 		</Stack>
