@@ -7,6 +7,7 @@ import {
 	useColorScheme,
 	type GestureResponderEvent,
 	StyleSheet,
+	ScrollView,
 } from "react-native";
 import RenderHTML, {
 	type TNode,
@@ -27,17 +28,9 @@ interface ArticleContentProps {
 	onInternalLinkPress?: (url: string, className?: string) => void;
 }
 
-/**
- * Type guard to determine if a TNode is a text node.
- * TText is a subtype of TNode that has a "data" property.
- */
-const isTextTNode = (node: TNode): node is TText => {
-	return typeof (node as TText).data === "string";
-};
+const isTextTNode = (node: TNode): node is TText =>
+	typeof (node as TText).data === "string";
 
-/**
- * Recursively extract text from a TNode.
- */
 const extractText = (node: TNode): string => {
 	if (isTextTNode(node)) return node.data;
 	if (node.children && node.children.length > 0) {
@@ -55,7 +48,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
 
-	// Define custom element models using the library’s HTMLContentModel enum.
+	// Custom element models
 	const customHTMLElementModels = useMemo(
 		() => ({
 			iframe: HTMLElementModel.fromCustomModel({
@@ -101,6 +94,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		[],
 	);
 
+	// Define table styles with a forced width for each cell
 	const tagsStyles = useMemo(
 		() => ({
 			h1: {
@@ -171,11 +165,34 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				marginVertical: 2,
 			} as MixedStyleDeclaration,
 			"div.vidcontainer": stylesMemo.videoContainer,
+			table: {
+				borderWidth: 0.5,
+				borderColor: "lightgray",
+				borderStyle: "solid",
+				width: "auto",
+				alignSelf: "flex-start",
+				marginVertical: 8,
+				borderRadius: 4,
+				overflow: "hidden",
+			} as MixedStyleDeclaration,
+			th: {
+				borderWidth: 0.5,
+				borderColor: "lightgray",
+				borderStyle: "solid",
+				padding: 8,
+				width: 150, // force fixed width for header cells
+			} as MixedStyleDeclaration,
+			td: {
+				borderWidth: 0.5,
+				borderColor: "lightgray",
+				borderStyle: "solid",
+				padding: 8,
+				width: 150, // force fixed width for each cell
+			} as MixedStyleDeclaration,
 		}),
 		[themeColors, stylesMemo],
 	);
 
-	// Custom renderer for YouTube iframes (block-level).
 	const YouTubeIframeRenderer: CustomBlockRenderer = ({ tnode }) => {
 		const src = tnode.attributes?.src;
 		if (!src) return null;
@@ -184,7 +201,6 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		if (!isYouTube) return null;
 		const uri = src.startsWith("//") ? `https:${src}` : src;
 		const videoHeight = (contentWidth * 9) / 16;
-
 		return (
 			<WebView
 				source={{ uri }}
@@ -197,6 +213,22 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				javaScriptEnabled
 				scalesPageToFit
 			/>
+		);
+	};
+
+	// Wrap the table in a horizontal ScrollView.
+	const SimpleTableRenderer: CustomBlockRenderer = ({
+		tnode,
+		TDefaultRenderer,
+		...props
+	}) => {
+		console.log("Rendering table with fixed cell width of 150");
+		return (
+			<ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
+				<View style={{ borderRadius: 4, overflow: "hidden" }}>
+					<TDefaultRenderer tnode={tnode} {...props} />
+				</View>
+			</ScrollView>
 		);
 	};
 
@@ -229,7 +261,6 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		[handleLinkPress, contentWidth],
 	);
 
-	// Custom renderer for <a> tags with class "btn4" (mixed-level).
 	const CustomAnchorRenderer: CustomMixedRenderer = ({
 		tnode,
 		TDefaultRenderer,
@@ -270,7 +301,6 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		return <TDefaultRenderer tnode={tnode} {...props} />;
 	};
 
-	// Custom renderer for <div> tags with class "blcatt" (block-level).
 	const CustomDivRenderer: CustomBlockRenderer = ({
 		tnode,
 		TDefaultRenderer,
@@ -298,6 +328,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		a: CustomAnchorRenderer,
 		div: CustomDivRenderer,
 		iframe: YouTubeIframeRenderer,
+		table: SimpleTableRenderer, // our simplified table renderer
 	};
 
 	return (
