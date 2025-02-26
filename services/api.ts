@@ -16,7 +16,10 @@ export const fetchLatestArticles = async (
 		const url = `${API_CONFIG.BASE_URL}/articles?page=${page}&per_page=${perPage}${buildCategoryParam(categories)}`;
 		console.log(`📡 Fetching from cache server: ${url}`);
 
-		const response = await fetch(url);
+		const response = await fetch(url).catch((error) => {
+			console.error("🔍 Fetch failed with error:", error.message, error.cause);
+			throw error;
+		});
 		if (!response.ok) throw new Error(`API error: ${response.status}`);
 
 		const data = await response.json();
