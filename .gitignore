@@ -36,3 +36,5 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+credentials.json
+cryptoast-app-c368a6ed540a.json

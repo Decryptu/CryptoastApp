@@ -21,7 +21,9 @@
 				"autoIncrement": true
 			},
 			"android": {
-				"buildType": "app-bundle"
+				"buildType": "app-bundle",
+				"credentialsSource": "local",
+				"autoIncrement": true
 			}
 		}
 	},
@@ -31,6 +33,11 @@
 				"appleId": "gurvan.lecointre@icloud.com",
 				"ascAppId": "1587061733",
 				"appleTeamId": "78327W728T"
+			},
+			"android": {
+				"serviceAccountKeyPath": "./cryptoast-app-c368a6ed540a.json",
+				"track": "internal",
+				"releaseStatus": "draft"
 			}
 		}
 	}
