@@ -1,4 +1,3 @@
-// components/ArticleContent.tsx
 import React, { type FC, useCallback, useMemo } from "react";
 import {
 	useWindowDimensions,
@@ -19,7 +18,7 @@ import RenderHTML, {
 	HTMLElementModel,
 	type MixedStyleDeclaration,
 } from "react-native-render-html";
-import type { Element as DOMElement } from "domhandler";
+import type { Element as DOMElement, Node as DOMNode } from "domhandler";
 import WebView from "react-native-webview";
 import colors from "tailwindcss/colors";
 import { CTAButton } from "./CTAButton";
@@ -233,6 +232,26 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		);
 	};
 
+	// Custom blockquote renderer to log special blockquotes
+	const CustomBlockquoteRenderer: CustomBlockRenderer = ({
+		tnode,
+		TDefaultRenderer,
+		...props
+	}) => {
+		// Check if this is the special blockquote class
+		const isSpecialBlockquote = tnode.classes?.includes(
+			"article-blockquote-module",
+		);
+
+		if (isSpecialBlockquote) {
+			console.log("Rendering special blockquote");
+		}
+
+		// Always use the default renderer with original tnode
+		// The filtering happens at the DOM level in the domVisitors
+		return <TDefaultRenderer tnode={tnode} {...props} />;
+	};
+
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
 			console.log("Link pressed with href:", href);
@@ -346,6 +365,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		div: CustomDivRenderer,
 		iframe: YouTubeIframeRenderer,
 		table: SimpleTableRenderer, // our simplified table renderer
+		// No custom blockquote renderer needed anymore - handling at DOM level is sufficient
 	};
 
 	return (
@@ -355,6 +375,36 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				source={{ html: content }}
 				domVisitors={{
 					onElement: (element: DOMElement) => {
+						// Process blockquotes with images
+						if (
+							element.tagName === "blockquote" &&
+							element.attribs?.class?.includes("article-blockquote-module")
+						) {
+							console.log(
+								"Found blockquote with article-blockquote-module class in DOM",
+							);
+
+							// Process all children to remove the image
+							if (element.children) {
+								// Find and remove all img elements
+								element.children = element.children.filter((child) => {
+									// Only process Element nodes (not Text nodes)
+									if ("tagName" in child) {
+										// Return false to filter out any img elements
+										return (child as DOMElement).tagName !== "img";
+									}
+									// Keep all other nodes (text, etc)
+									return true;
+								});
+
+								// Also add a bit of top padding to the blockquote to compensate for image removal
+								if (!element.attribs.style) {
+									element.attribs.style = "";
+								}
+								element.attribs.style += "padding-top: 12px;";
+							}
+						}
+
 						if (element.tagName === "img") {
 							element.attribs = {
 								...element.attribs,
