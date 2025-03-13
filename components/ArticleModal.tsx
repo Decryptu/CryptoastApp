@@ -1,3 +1,4 @@
+// components/ArticleModal.tsx
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 import {
@@ -17,11 +18,15 @@ import { ArticleContentSkeleton } from "./ArticleContentSkeleton";
 import { ArticleView } from "./ArticleView";
 
 interface ArticleModalProps {
-	articleId: number;
+	articleId: number | null;
 	visible: boolean;
 	onClose: () => void;
 	/** Callback to handle internal links tapped within the modal */
 	onInternalLinkPress?: (url: string, className?: string) => void;
+	/** Flag to indicate initial loading state before article ID is resolved */
+	initialLoading?: boolean;
+	/** The slug of the article being loaded (for display purposes) */
+	slug?: string | null;
 }
 
 export const ArticleModal: FC<ArticleModalProps> = ({
@@ -29,9 +34,12 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 	visible,
 	onClose,
 	onInternalLinkPress = () => {}, // Provide default empty function
+	initialLoading = false,
+	slug = null,
 }) => {
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [error, setError] = useState<string | null>(null);
 	const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 	const colorScheme = useColorScheme();
 	const isDark = colorScheme === "dark";
@@ -40,19 +48,31 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 		let isMounted = true;
 
 		const loadArticle = async () => {
-			if (!visible) return;
+			// Reset state when modal becomes visible
+			if (visible) {
+				setError(null);
 
-			try {
-				setLoading(true);
-				const data = await fetchArticle(articleId);
-				if (isMounted) {
-					setArticle(data);
+				// If we're in initial loading state (waiting for article ID),
+				// don't try to fetch the article yet
+				if (initialLoading || articleId === null) {
+					return;
 				}
-			} catch (error) {
-				console.error("ArticleModal: failed to fetch article:", error);
-			} finally {
-				if (isMounted) {
-					setLoading(false);
+
+				try {
+					setLoading(true);
+					const data = await fetchArticle(articleId);
+					if (isMounted) {
+						setArticle(data);
+					}
+				} catch (error) {
+					console.error("ArticleModal: failed to fetch article:", error);
+					if (isMounted) {
+						setError("Failed to load article. Please try again.");
+					}
+				} finally {
+					if (isMounted) {
+						setLoading(false);
+					}
 				}
 			}
 		};
@@ -62,7 +82,7 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 		return () => {
 			isMounted = false;
 		};
-	}, [articleId, visible]);
+	}, [articleId, visible, initialLoading]);
 
 	const handleShare = async () => {
 		if (!article) return;
@@ -106,9 +126,28 @@ export const ArticleModal: FC<ArticleModalProps> = ({
 							/>
 						</TouchableOpacity>
 					</View>
+
 					{/* Modal Content */}
-					{loading ? (
+					{initialLoading || loading ? (
 						<ArticleContentSkeleton />
+					) : error ? (
+						<View className="flex-1 justify-center items-center px-4">
+							<Feather
+								name="alert-circle"
+								size={40}
+								color={isDark ? colors.red[400] : colors.red[500]}
+								className="mb-4"
+							/>
+							<Text className="text-center text-red-500 dark:text-red-400 text-base mb-2">
+								{error}
+							</Text>
+							<TouchableOpacity
+								onPress={onClose}
+								className="mt-4 bg-zinc-200 dark:bg-zinc-700 px-4 py-2 rounded-lg"
+							>
+								<Text className="text-zinc-800 dark:text-zinc-200">Close</Text>
+							</TouchableOpacity>
+						</View>
 					) : article ? (
 						<ArticleView
 							article={article}

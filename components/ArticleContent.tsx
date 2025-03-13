@@ -1,3 +1,4 @@
+// components/ArticleContent.tsx
 import React, { type FC, useCallback, useMemo } from "react";
 import {
 	useWindowDimensions,
@@ -234,14 +235,17 @@ const ArticleContent: FC<ArticleContentProps> = ({
 
 	const handleLinkPress = useCallback(
 		async (event: GestureResponderEvent, href?: string) => {
+			console.log("Link pressed with href:", href);
 			if (!href) return;
 			if (
 				href.includes("cryptoast.fr") &&
 				!href.includes("/go-") &&
 				!href.includes("/cours-")
 			) {
+				console.log("Internal link detected:", href);
 				onInternalLinkPress?.(href);
 			} else {
+				console.log("External link detected, opening URL:", href);
 				await Linking.openURL(href);
 			}
 		},
@@ -266,6 +270,8 @@ const ArticleContent: FC<ArticleContentProps> = ({
 		TDefaultRenderer,
 		...props
 	}) => {
+		// This is the critical part - we need to explicitly pass the onPress handler
+		// from renderersProps for non-btn4 links
 		if (tnode.classes?.includes("btn4")) {
 			let gradientColors: readonly [string, string, ...string[]] = [
 				"#000000",
@@ -298,7 +304,18 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				/>
 			);
 		}
-		return <TDefaultRenderer tnode={tnode} {...props} />;
+
+		// For regular links, make sure to pass the onPress handler explicitly
+		// This is the key fix for making links clickable
+		const href = tnode.attributes?.href;
+
+		return (
+			<TDefaultRenderer
+				tnode={tnode}
+				{...props}
+				onPress={(e) => handleLinkPress(e, href)}
+			/>
+		);
 	};
 
 	const CustomDivRenderer: CustomBlockRenderer = ({

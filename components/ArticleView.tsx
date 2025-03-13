@@ -1,3 +1,4 @@
+// components/ArticleView.tsx
 import {
 	View,
 	Text,

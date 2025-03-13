@@ -1,3 +1,4 @@
+// services/api.ts
 import { API_CONFIG } from "../config/api";
 import { CATEGORY_MAPPINGS } from "../data/categories";
 import type { Article } from "../types/article";

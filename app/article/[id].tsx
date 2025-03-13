@@ -1,3 +1,4 @@
+// app/article/[id].tsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Share, type ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -10,9 +11,16 @@ import { ArticleModal } from "../../components/ArticleModal";
 import { ArticleView } from "../../components/ArticleView";
 import { API_CONFIG } from "../../config/api";
 
+/**
+ * Extracts the article slug from a URL
+ * Example: https://cryptoast.fr/sonic-comment-etre-eligible-a-airdrop-projet-crypto/ -> sonic-comment-etre-eligible-a-airdrop-projet-crypto
+ */
 const extractArticleSlug = (url: string): string | null => {
+	// Remove trailing slash if present
 	const cleanUrl = url.replace(/\/$/, "");
+	// Get the last segment of the URL which should be the slug
 	const slug = cleanUrl.split("/").pop();
+	console.log(`Extracted slug from URL (${url}):`, slug);
 	return slug ?? null;
 };
 
@@ -21,8 +29,13 @@ export default function ArticleScreen() {
 	const [article, setArticle] = useState<Article | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
+
+	// Modal state
 	const [modalVisible, setModalVisible] = useState(false);
 	const [modalArticleId, setModalArticleId] = useState<number | null>(null);
+	const [modalSlug, setModalSlug] = useState<string | null>(null);
+	const [modalLoading, setModalLoading] = useState(false);
+
 	const scrollViewRef = useRef<ScrollView>(null);
 
 	useScrollToTop(scrollViewRef, id);
@@ -76,25 +89,61 @@ export default function ArticleScreen() {
 		async (url: string, className?: string) => {
 			const slug = extractArticleSlug(url);
 			if (slug) {
+				// Check if we're already viewing this article's slug
+				if (article?.slug === slug) {
+					console.log("Already viewing this article, not opening modal");
+					return;
+				}
+
+				// Show modal immediately with loading state
+				setModalSlug(slug);
+				setModalArticleId(null); // Clear the previous ID
+				setModalLoading(true);
+				setModalVisible(true);
+
 				try {
 					console.log("Fetching article by slug:", slug);
+
+					// Use the dedicated slug lookup endpoint
 					const response = await fetch(
-						`${API_CONFIG.BASE_URL}/articles?slug=${slug}`,
+						`${API_CONFIG.BASE_URL}/articles/slug/${encodeURIComponent(slug)}`,
 					);
-					const articles = await response.json();
-					if (articles && articles.length > 0) {
-						const articleId = articles[0].id;
-						setModalArticleId(articleId);
-						setModalVisible(true);
-						console.log("Opening modal for article:", articleId);
+
+					if (!response.ok) {
+						if (response.status === 404) {
+							console.warn(`No article found for slug: ${slug}`);
+							// Keep modal open with error state that will be handled by ArticleModal
+							return;
+						}
+						throw new Error(`API responded with status: ${response.status}`);
 					}
+
+					const data = await response.json();
+					const articleId = data.id;
+
+					console.log(`Found article ID ${articleId} for slug: ${slug}`);
+
+					// Set the article ID which will trigger the content fetch in the modal
+					setModalArticleId(articleId);
 				} catch (error) {
 					console.error("Error fetching article by slug:", error);
+					// Keep modal open with error state that will be handled by ArticleModal
+				} finally {
+					setModalLoading(false);
 				}
 			}
 		},
-		[],
+		[article?.slug],
 	);
+
+	const handleModalClose = () => {
+		setModalVisible(false);
+		// Clean up modal state after close animation completes
+		setTimeout(() => {
+			setModalArticleId(null);
+			setModalSlug(null);
+		}, 300);
+	};
 
 	return (
 		<SafeAreaView
@@ -115,12 +164,14 @@ export default function ArticleScreen() {
 					/>
 				) : null}
 
-				{modalVisible && modalArticleId !== null && (
+				{modalVisible && (
 					<ArticleModal
 						articleId={modalArticleId}
 						visible={modalVisible}
-						onClose={() => setModalVisible(false)}
+						onClose={handleModalClose}
 						onInternalLinkPress={handleInternalLinkPress}
+						initialLoading={modalLoading}
+						slug={modalSlug}
 					/>
 				)}
 			</View>

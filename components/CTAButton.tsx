@@ -1,3 +1,4 @@
+// components/CTAButton.tsx
 import type React from "react";
 import {
 	TouchableOpacity,
