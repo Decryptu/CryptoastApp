@@ -127,6 +127,10 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				lineHeight: 22,
 				color: themeColors.text,
 			} as MixedStyleDeclaration,
+			"p.blockquote-citation": {
+				marginTop: 0,
+				paddingTop: 0,
+			} as MixedStyleDeclaration,
 			a: {
 				color: themeColors.link,
 				textDecorationColor: themeColors.link,
@@ -140,6 +144,12 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				borderLeftWidth: 4,
 				borderLeftColor: themeColors.blockquoteBorder,
 				color: themeColors.blockquoteText,
+			} as MixedStyleDeclaration,
+			"blockquote.article-blockquote-module": {
+				// Fix for special blockquotes with images
+				paddingTop: 0,
+				marginTop: 16, // Increased margin-top for better spacing
+				marginBottom: 16, // Added margin-bottom for better spacing
 			} as MixedStyleDeclaration,
 			img: stylesMemo.image,
 			figure: {
@@ -384,24 +394,51 @@ const ArticleContent: FC<ArticleContentProps> = ({
 								"Found blockquote with article-blockquote-module class in DOM",
 							);
 
-							// Process all children to remove the image
+							// Process all children to remove the image and text nodes
 							if (element.children) {
-								// Find and remove all img elements
+								// Filter out image elements AND any text nodes that only contain whitespace
 								element.children = element.children.filter((child) => {
-									// Only process Element nodes (not Text nodes)
-									if ("tagName" in child) {
-										// Return false to filter out any img elements
-										return (child as DOMElement).tagName !== "img";
+									// Remove img elements entirely
+									if (
+										"tagName" in child &&
+										(child as DOMElement).tagName === "img"
+									) {
+										return false;
 									}
-									// Keep all other nodes (text, etc)
+
+									// Remove text nodes that only contain whitespace
+									if ("data" in child && typeof child.data === "string") {
+										// Keep text nodes that have actual content
+										return !/^\s*$/.test(child.data);
+									}
+
+									// Keep all other elements
 									return true;
 								});
 
-								// Also add a bit of top padding to the blockquote to compensate for image removal
+								// Set margin/padding to properly space the blockquote
 								if (!element.attribs.style) {
 									element.attribs.style = "";
 								}
-								element.attribs.style += "padding-top: 12px;";
+								element.attribs.style +=
+									"margin-top: 16px; margin-bottom: 16px; padding-top: 0;";
+
+								// Also find the first paragraph and remove its top margin/padding
+								const firstParagraph = element.children.find(
+									(child) =>
+										"tagName" in child && (child as DOMElement).tagName === "p",
+								) as DOMElement;
+
+								if (firstParagraph) {
+									if (!firstParagraph.attribs) {
+										firstParagraph.attribs = {};
+									}
+									if (!firstParagraph.attribs.style) {
+										firstParagraph.attribs.style = "";
+									}
+									firstParagraph.attribs.style +=
+										"margin-top: 0; padding-top: 0;";
+								}
 							}
 						}
 
