@@ -109,7 +109,7 @@ export const ArticleView: FC<ArticleViewProps> = ({
 			<Text className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">
 				{article.title.rendered.replace(/<[^>]*>/g, "")}
 			</Text>
-			<Text className="text-lg text-zinc-600 dark:text-zinc-300 italic">
+			<Text className="text-xl text-zinc-600 dark:text-zinc-300 italic">
 				{excerpt}
 			</Text>
 			<View className="flex-row justify-between items-center mb-6">

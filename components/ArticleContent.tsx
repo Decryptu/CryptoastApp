@@ -122,9 +122,9 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				color: themeColors.text,
 			} as MixedStyleDeclaration,
 			p: {
-				fontSize: 16,
+				fontSize: 18,
 				marginVertical: 4,
-				lineHeight: 22,
+				lineHeight: 24,
 				color: themeColors.text,
 			} as MixedStyleDeclaration,
 			"p.blockquote-citation": {
@@ -456,7 +456,7 @@ const ArticleContent: FC<ArticleContentProps> = ({
 				enableExperimentalGhostLinesPrevention
 				renderers={customRenderers}
 				renderersProps={renderersProps}
-				baseStyle={{ color: themeColors.text, fontSize: 16 }}
+				baseStyle={{ color: themeColors.text, fontSize: 18 }}
 				tagsStyles={tagsStyles}
 			/>
 		</View>
