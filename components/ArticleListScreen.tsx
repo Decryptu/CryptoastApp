@@ -47,6 +47,10 @@ const CategoryPage = React.memo(
       selectedCategory: categoryId,
     });
     
+    // Create section identifier with consistent format: "SECTION-CATEGORYID"
+    // This needs to match the tab name when ScrollEvents.scrollToTop is called
+    const sectionIdentifier = `${section}-${categoryId || "all"}`;
+    
     console.log(`📊 Rendering category ${categoryId || "all"} with ${articles.length} articles`);
     
     return (
@@ -56,7 +60,7 @@ const CategoryPage = React.memo(
           loading={loading}
           refreshing={refreshing}
           loadingMore={loadingMore}
-          section={`${section}-${categoryId || "all"}`}
+          section={sectionIdentifier}
           onRefresh={handleRefresh}
           onLoadMore={loadMoreArticles}
           panGesture={null} // We're handling gestures at the carousel level

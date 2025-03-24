@@ -1,4 +1,3 @@
-// components/ArticleList.tsx
 import React, { useCallback, useRef, useEffect } from "react";
 import {
   View,
@@ -56,13 +55,23 @@ export function ArticleList({
   const isTablet = width >= 768;
   const numColumns = isTablet ? 2 : 1;
 
+  // Extract tab name from section for scroll events registration
+  // Format of section is typically "TABNAME-category" (e.g., "NEWS-all", "NEWS-5")
+  const tabName = section.split('-')[0].toLowerCase();
+  const registrationKey = section.toLowerCase();
+
   // Register scroll ref when component mounts
   useEffect(() => {
-    ScrollEvents.register(section.toLowerCase(), listRef);
+    // Register with the full key including category
+    ScrollEvents.register(registrationKey, listRef);
+    
+    console.log(`📱 ArticleList: Registered ${registrationKey} with ScrollEvents`);
+    
     return () => {
-      ScrollEvents.unregister(section.toLowerCase());
+      ScrollEvents.unregister(registrationKey);
+      console.log(`📱 ArticleList: Unregistered ${registrationKey} from ScrollEvents`);
     };
-  }, [section]);
+  }, [registrationKey]);
 
   const handleArticlePress = useCallback(
     (article: Article) => {

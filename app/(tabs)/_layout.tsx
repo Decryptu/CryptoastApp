@@ -13,6 +13,12 @@ export default function TabLayout() {
 
 	const handleTabPress = (name: string, isActive: boolean) => {
 		if (isActive) {
+			console.log(`🔄 Tab pressed: ${name.toLowerCase()} (already active)`);
+
+			// Debug to see all registered listeners
+			ScrollEvents.logListeners();
+
+			// Scroll to top for this tab
 			ScrollEvents.scrollToTop(name.toLowerCase());
 		}
 	};
