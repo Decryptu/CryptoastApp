@@ -1,3 +1,4 @@
+// components/ArticleListScreen.tsx
 import React, { useState, useCallback, useMemo } from "react";
 import { SafeAreaView, View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";

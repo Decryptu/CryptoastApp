@@ -1,3 +1,4 @@
+// components/CategoryCarousel.tsx
 import type React from "react";
 import { useEffect, useMemo } from "react";
 import { View, Dimensions } from "react-native";

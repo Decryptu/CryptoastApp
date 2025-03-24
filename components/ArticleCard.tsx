@@ -1,4 +1,4 @@
-// CryptoastApp/components/ArticleCard.tsx
+// components/ArticleCard.tsx
 import type React from "react";
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { View, Text, Image, Pressable } from "react-native";

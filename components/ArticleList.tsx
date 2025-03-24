@@ -1,3 +1,4 @@
+// components/ArticleList.tsx
 import React, { useCallback, useRef, useEffect } from "react";
 import {
   View,
