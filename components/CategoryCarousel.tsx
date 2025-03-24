@@ -8,7 +8,7 @@ import Animated, {
   withSpring,
   runOnJS
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture, GestureDetector, State } from "react-native-gesture-handler";
 import type { ContentSection } from "../services/api";
 
 interface CategoryCarouselProps {
@@ -26,7 +26,7 @@ const SPRING_CONFIG = {
 };
 
 // Minimum distance to consider a gesture a swipe rather than a tap
-const MIN_SWIPE_DISTANCE = 5;
+const MIN_SWIPE_DISTANCE = 10;
 
 export function CategoryCarousel({
   currentIndex,
@@ -42,8 +42,8 @@ export function CategoryCarousel({
   const translateX = useSharedValue(-currentIndex * width);
   const currentIndexSV = useSharedValue(currentIndex);
   
-  // Track whether a swipe is in progress, including animation
-  const isGestureActive = useSharedValue(false);
+  // Track whether a significant horizontal swipe has occurred
+  const hasSwipedHorizontally = useSharedValue(false);
   
   // Update translateX when currentIndex changes externally (e.g., from tab press)
   useEffect(() => {
@@ -54,16 +54,30 @@ export function CategoryCarousel({
     }
   }, [currentIndex, translateX, currentIndexSV]);
   
+  // Create a tap gesture that we'll configure specially to avoid conflict with pan
+  const tapGesture = Gesture.Tap()
+    .maxDuration(250)
+    .onStart(() => {
+      // This tap gesture does nothing on its own - it's just here so we can
+      // properly manage the gesture relationships
+      console.log('Tap gesture recognized but doing nothing');
+    });
+  
   // Handle swipe gesture
   const panGesture = Gesture.Pan()
     // Configure the pan gesture to explicitly require horizontal movement
     .activeOffsetX([-MIN_SWIPE_DISTANCE, MIN_SWIPE_DISTANCE]) 
-    .failOffsetY([-25, 25]) // Fail if more vertical than horizontal
+    .failOffsetY([-20, 20]) // Fail if significantly more vertical than horizontal
     .onBegin(() => {
-      // Mark that a gesture has started
-      isGestureActive.value = true;
+      // Reset the horizontal swipe tracker on new gesture
+      hasSwipedHorizontally.value = false;
     })
     .onUpdate((e) => {
+      // Track whether significant horizontal movement has occurred
+      if (Math.abs(e.translationX) > MIN_SWIPE_DISTANCE) {
+        hasSwipedHorizontally.value = true;
+      }
+      
       // Calculate new position based on current index
       const newTranslateX = -currentIndexSV.value * width + e.translationX;
       
@@ -106,34 +120,36 @@ export function CategoryCarousel({
       }
       
       // Always animate to the nearest page
-      translateX.value = withSpring(-newIndex * width, SPRING_CONFIG, () => {
-        // Called when animation completes
-        isGestureActive.value = false;
-      });
-      
+      translateX.value = withSpring(-newIndex * width, SPRING_CONFIG);
       currentIndexSV.value = newIndex;
     })
-    .onFinalize(() => {
-      // This will be called regardless of success/failure
-      // We keep isGestureActive true until the animation completes
-    });
-  
-  // Simple tap gesture that will block all touches during a swipe
-  const blockTapsGesture = Gesture.Tap()
-    .maxDuration(100000) // Long duration to catch all taps
-    .onTouchesDown(() => {
-      // If a swipe is in progress or animating, prevent all taps
-      if (isGestureActive.value) {
-        return false; // Block the gesture
+    // This is the critical part: make the pan gesture block the tap gesture
+    // This means the tap gesture won't activate after a pan gesture completes
+    .blocksExternalGesture(tapGesture);
+    
+  // Now create a special native gesture that we'll use to both:
+  // 1. Capture tap events to prevent underlying article taps after swipes
+  // 2. Allow normal article tap behavior for regular taps
+  const nativeGesture = Gesture.Native()
+    .onTouchesDown((_e, manager) => {
+      // Reset our horizontal swipe tracker on touch down
+      hasSwipedHorizontally.value = false;
+    })
+    .onTouchesUp((_e, manager) => {
+      // If a significant horizontal swipe has occurred, cancel the native gesture
+      // This prevents the tap from being detected after a swipe
+      if (hasSwipedHorizontally.value) {
+        manager.fail();
+        return;
       }
-      return true; // Allow the gesture
+      // Otherwise, let the underlying tap work normally
     });
-  
-  // Combine gestures with Exclusive to ensure proper priority
-  // Pan gesture gets priority, and we completely block taps during swipes
+    
+  // Combine the gestures with Exclusive to ensure proper priority
+  // Pan has highest priority, followed by native (for article taps)
   const combinedGesture = Gesture.Exclusive(
     panGesture,
-    blockTapsGesture
+    Gesture.Simultaneous(tapGesture, nativeGesture)
   );
   
   // Create the animated style for the container
