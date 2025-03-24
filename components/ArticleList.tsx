@@ -9,6 +9,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
+import type { ViewStyle } from "react-native";
+import type { AnimatedStyle } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
 import { ArticleCard } from "./ArticleCard";
@@ -19,15 +21,15 @@ import type { GestureType } from "../types/animation";
 import colors from "tailwindcss/colors";
 
 interface ArticleListProps {
-  articles: Article[];
-  loading: boolean;
-  refreshing: boolean;
-  loadingMore: boolean;
-  section: string;
-  onRefresh: () => void;
-  onLoadMore: () => void;
-  panGesture: GestureType | null;
-  animatedStyle: any;
+	articles: Article[];
+	loading: boolean;
+	refreshing: boolean;
+	loadingMore: boolean;
+	section: string;
+	onRefresh: () => void;
+	onLoadMore: () => void;
+	panGesture: GestureType | null;
+	animatedStyle: AnimatedStyle<ViewStyle>;
 }
 
 const NUM_SKELETONS = 10;
