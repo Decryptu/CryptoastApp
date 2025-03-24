@@ -1,7 +1,8 @@
-// CryptoastApp/components/ArticleCard.tsx
+// components/ArticleCard.tsx
 import type React from "react";
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { View, Text, Image, Pressable } from "react-native";
+import { View, Text, Image } from "react-native";
+import { Pressable } from "react-native-gesture-handler";
 import type { Article } from "../types/article";
 
 type Props = {

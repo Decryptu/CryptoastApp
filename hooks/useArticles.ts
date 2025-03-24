@@ -1,3 +1,4 @@
+// hooks/useArticles.ts
 import { useState, useCallback, useEffect } from "react";
 import { API_CONFIG } from "../config/api";
 import type { Article } from "../types/article";

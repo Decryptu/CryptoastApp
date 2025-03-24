@@ -1,3 +1,4 @@
+// hooks/useCategories.ts
 import { useMemo, useCallback } from "react";
 import { categories, CATEGORY_MAPPINGS } from "../data/categories";
 import type { Category } from "../data/categories";
@@ -7,8 +8,6 @@ interface CategoryTab {
 	id: number;
 	name: string;
 }
-
-const SWIPE_THRESHOLD = 100;
 
 export function useCategories(
 	section: ContentSection,
@@ -65,6 +64,5 @@ export function useCategories(
 	return {
 		sectionCategories,
 		handleCategoryChange,
-		SWIPE_THRESHOLD,
 	};
 }
