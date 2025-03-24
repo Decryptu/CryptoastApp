@@ -1,102 +1,141 @@
-import React, { useState, useMemo } from "react";
-import { SafeAreaView, useColorScheme, View } from "react-native";
+// components/ArticleListScreen.tsx
+import React, { useState, useCallback, useMemo } from "react";
+import { SafeAreaView, View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import {
-	useAnimatedStyle,
-	withSpring,
-	runOnJS,
-	useSharedValue,
-} from "react-native-reanimated";
-import { Gesture, GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { CategoryTabs } from "./CategoryTabs";
 import { ArticleList } from "./ArticleList";
+import { CategoryCarousel } from "./CategoryCarousel";
 import { useArticles } from "../hooks/useArticles";
 import { useCategories } from "../hooks/useCategories";
 import type { Article } from "../types/article";
 import type { ContentSection } from "../services/api";
 
 type Props = {
-	fetchArticles: (
-		page?: number,
-		perPage?: number,
-		categoryId?: number,
-	) => Promise<Article[]>;
-	logLabel: string;
-	section: ContentSection;
+  fetchArticles: (
+    page?: number,
+    perPage?: number,
+    categoryId?: number,
+  ) => Promise<Article[]>;
+  logLabel: string;
+  section: ContentSection;
 };
 
 export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
-	const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-	const translateX = useSharedValue(0);
-	const colorScheme = useColorScheme();
-	const isDark = colorScheme === "dark";
+  // Current category index (0 = All, 1+ = specific categories)
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
-	const { sectionCategories, handleCategoryChange, SWIPE_THRESHOLD } =
-		useCategories(section, selectedCategory);
+  const { sectionCategories } = useCategories(section, null);
 
-	const {
-		articles,
-		loading,
-		refreshing,
-		loadingMore,
-		loadMoreArticles,
-		handleRefresh,
-	} = useArticles({
-		fetchArticles,
-		logLabel,
-		selectedCategory,
-	});
+  // Function to get category ID from index
+  const getCategoryIdFromIndex = useCallback((index: number): number | null => {
+    if (index === 0) return null; // All categories
+    return sectionCategories[index - 1]?.id || null;
+  }, [sectionCategories]);
 
-	const panGesture = useMemo(
-		() =>
-			Gesture.Pan()
-				.activeOffsetX([-20, 20]) // Only activate after 20px horizontal movement
-				.failOffsetY([-20, 20]) // Fail gesture if vertical movement exceeds 20px
-				.onChange((event) => {
-					translateX.value += event.changeX;
-				})
-				.onFinalize((event) => {
-					if (Math.abs(event.velocityX) >= SWIPE_THRESHOLD) {
-						if (event.velocityX > 0) {
-							runOnJS(handleCategoryChange)("prev", setSelectedCategory);
-						} else {
-							runOnJS(handleCategoryChange)("next", setSelectedCategory);
-						}
-					}
-					translateX.value = withSpring(0);
-				}),
-		[handleCategoryChange, translateX, SWIPE_THRESHOLD],
-	);
+  // The currently selected category ID
+  const selectedCategory = useMemo(() => 
+    getCategoryIdFromIndex(currentIndex), 
+    [getCategoryIdFromIndex, currentIndex]
+  );
 
-	const animatedStyle = useAnimatedStyle(() => ({
-		transform: [{ translateX: translateX.value }],
-	}));
+  // Handle category selection from tabs
+  const handleSelectCategory = useCallback((categoryId: number | null) => {
+    const newIndex = categoryId === null 
+      ? 0 
+      : sectionCategories.findIndex(cat => cat.id === categoryId) + 1;
+    
+    if (newIndex !== -1) {
+      console.log(`🔄 Selecting category: ${categoryId || "all"} (index: ${newIndex})`);
+      setCurrentIndex(newIndex);
+    }
+  }, [sectionCategories]);
 
-	return (
-		<GestureHandlerRootView style={{ flex: 1 }}>
-			<SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
-				<StatusBar style={isDark ? "light" : "dark"} />
-				<View className="flex-1">
-					{sectionCategories.length > 0 && (
-						<CategoryTabs
-							selectedCategory={selectedCategory}
-							onSelectCategory={setSelectedCategory}
-							categories={sectionCategories}
-						/>
-					)}
-					<ArticleList
-						articles={articles}
-						loading={loading}
-						refreshing={refreshing}
-						loadingMore={loadingMore}
-						section={section}
-						onRefresh={handleRefresh}
-						onLoadMore={loadMoreArticles}
-						panGesture={panGesture}
-						animatedStyle={animatedStyle}
-					/>
-				</View>
-			</SafeAreaView>
-		</GestureHandlerRootView>
-	);
+  // Render a single category page
+  const renderCategoryPage = useCallback((categoryId: number | null, index: number) => {
+    return (
+      <CategoryPage 
+        key={`page-${categoryId || 'all'}-${section}`}
+        fetchArticles={fetchArticles}
+        categoryId={categoryId}
+        logLabel={`${logLabel}-${categoryId || 'all'}`}
+        section={section}
+      />
+    );
+  }, [fetchArticles, logLabel, section]);
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <View className="flex-1">
+          {sectionCategories.length > 0 && (
+            <CategoryTabs
+              selectedCategory={selectedCategory}
+              onSelectCategory={handleSelectCategory}
+              categories={sectionCategories}
+            />
+          )}
+          
+          <CategoryCarousel
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+            categories={sectionCategories}
+            renderCategoryPage={renderCategoryPage}
+            section={section}
+          />
+        </View>
+      </SafeAreaView>
+    </GestureHandlerRootView>
+  );
 }
+
+// Component to handle article loading for a specific category
+// CategoryPage component from ArticleListScreen.tsx
+// This updated version ensures proper gesture handling
+
+function CategoryPage({
+	fetchArticles,
+	categoryId,
+	logLabel,
+	section,
+  }: {
+	fetchArticles: (page?: number, perPage?: number, categoryId?: number) => Promise<Article[]>;
+	categoryId: number | null;
+	logLabel: string;
+	section: ContentSection;
+  }) {
+	// Use the existing hook for article loading
+	const {
+	  articles,
+	  loading,
+	  refreshing,
+	  loadingMore,
+	  loadMoreArticles,
+	  handleRefresh,
+	} = useArticles({
+	  fetchArticles,
+	  logLabel,
+	  selectedCategory: categoryId,
+	});
+  
+	console.log(`📊 Rendering category ${categoryId || "all"} with ${articles.length} articles`);
+  
+	return (
+	  <View style={{ flex: 1, width: '100%' }}>
+		<ArticleList
+		  articles={articles}
+		  loading={loading}
+		  refreshing={refreshing}
+		  loadingMore={loadingMore}
+		  section={`${section}-${categoryId || "all"}`}
+		  onRefresh={handleRefresh}
+		  onLoadMore={loadMoreArticles}
+		  panGesture={null} // We're handling gestures at the carousel level
+		  animatedStyle={{}}
+		/>
+	  </View>
+	);
+  }

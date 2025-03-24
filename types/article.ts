@@ -1,3 +1,4 @@
+// types/article.ts
 // Common properties shared between posts and pages
 interface SchemaGraph {
 	"@type": string;

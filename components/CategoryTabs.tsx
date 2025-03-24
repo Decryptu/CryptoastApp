@@ -1,3 +1,4 @@
+// components/CategoryTabs.tsx
 import React from "react";
 import { ScrollView, Text, Pressable, View } from "react-native";
 
