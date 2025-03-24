@@ -27,6 +27,10 @@ const SPRING_CONFIG = {
 // Minimum distance to consider a gesture a swipe rather than a tap
 const MIN_SWIPE_DISTANCE = 10;
 
+// How many pages to render on each side of the current page
+// 1 means render the current page plus one on each side (3 total)
+const RENDER_WINDOW = 1;
+
 export function CategoryCarousel({
   currentIndex,
   setCurrentIndex,
@@ -148,6 +152,16 @@ export function CategoryCarousel({
       transform: [{ translateX: translateX.value }],
     };
   });
+
+  // Calculate which pages should be rendered based on the current index
+  // This is the key optimization - only render pages that are visible or about to become visible
+  const visibleIndices = useMemo(() => {
+    const minIndex = Math.max(0, currentIndex - RENDER_WINDOW);
+    const maxIndex = Math.min(allCategories.length - 1, currentIndex + RENDER_WINDOW);
+    
+    console.log(`🎯 Rendering pages from index ${minIndex} to ${maxIndex}`);
+    return Array.from({ length: maxIndex - minIndex + 1 }, (_, i) => minIndex + i);
+  }, [currentIndex, allCategories.length]);
   
   return (
     <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -167,7 +181,13 @@ export function CategoryCarousel({
               key={`category-${category.id || 'all'}-${section}`}
               style={{ width, height: '100%' }}
             >
-              {renderCategoryPage(category.id, index)}
+              {/* Only render the page if it's in the visible indices array */}
+              {visibleIndices.includes(index) ? (
+                renderCategoryPage(category.id, index)
+              ) : (
+                // Render an empty placeholder for non-visible pages
+                <View style={{ flex: 1 }} />
+              )}
             </View>
           ))}
         </Animated.View>

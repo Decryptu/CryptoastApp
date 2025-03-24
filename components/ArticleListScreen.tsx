@@ -1,4 +1,3 @@
-// components/ArticleListScreen.tsx
 import React, { useState, useCallback, useMemo } from "react";
 import { SafeAreaView, View, useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +19,60 @@ type Props = {
   logLabel: string;
   section: ContentSection;
 };
+
+// Memoized CategoryPage component to prevent unnecessary re-renders
+const CategoryPage = React.memo(
+  ({
+    fetchArticles,
+    categoryId,
+    logLabel,
+    section,
+  }: {
+    fetchArticles: (page?: number, perPage?: number, categoryId?: number) => Promise<Article[]>;
+    categoryId: number | null;
+    logLabel: string;
+    section: ContentSection;
+  }) => {
+    // Use the existing hook for article loading
+    const {
+      articles,
+      loading,
+      refreshing,
+      loadingMore,
+      loadMoreArticles,
+      handleRefresh,
+    } = useArticles({
+      fetchArticles,
+      logLabel,
+      selectedCategory: categoryId,
+    });
+    
+    console.log(`📊 Rendering category ${categoryId || "all"} with ${articles.length} articles`);
+    
+    return (
+      <View style={{ flex: 1, width: '100%' }}>
+        <ArticleList
+          articles={articles}
+          loading={loading}
+          refreshing={refreshing}
+          loadingMore={loadingMore}
+          section={`${section}-${categoryId || "all"}`}
+          onRefresh={handleRefresh}
+          onLoadMore={loadMoreArticles}
+          panGesture={null} // We're handling gestures at the carousel level
+          animatedStyle={{}}
+        />
+      </View>
+    );
+  },
+  // Custom comparison function to prevent unnecessary re-renders
+  (prevProps, nextProps) => {
+    // Only re-render if the categoryId or section changes
+    // fetchArticles and logLabel depend on these, so no need to check them separately
+    return prevProps.categoryId === nextProps.categoryId && 
+           prevProps.section === nextProps.section;
+  }
+);
 
 export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
   // Current category index (0 = All, 1+ = specific categories)
@@ -53,7 +106,7 @@ export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
     }
   }, [sectionCategories]);
 
-  // Render a single category page
+  // Render a single category page - memoized to prevent recreation on every render
   const renderCategoryPage = useCallback((categoryId: number | null, index: number) => {
     return (
       <CategoryPage 
@@ -91,51 +144,3 @@ export function ArticleListScreen({ fetchArticles, logLabel, section }: Props) {
     </GestureHandlerRootView>
   );
 }
-
-// Component to handle article loading for a specific category
-// CategoryPage component from ArticleListScreen.tsx
-// This updated version ensures proper gesture handling
-
-function CategoryPage({
-	fetchArticles,
-	categoryId,
-	logLabel,
-	section,
-  }: {
-	fetchArticles: (page?: number, perPage?: number, categoryId?: number) => Promise<Article[]>;
-	categoryId: number | null;
-	logLabel: string;
-	section: ContentSection;
-  }) {
-	// Use the existing hook for article loading
-	const {
-	  articles,
-	  loading,
-	  refreshing,
-	  loadingMore,
-	  loadMoreArticles,
-	  handleRefresh,
-	} = useArticles({
-	  fetchArticles,
-	  logLabel,
-	  selectedCategory: categoryId,
-	});
-  
-	console.log(`📊 Rendering category ${categoryId || "all"} with ${articles.length} articles`);
-  
-	return (
-	  <View style={{ flex: 1, width: '100%' }}>
-		<ArticleList
-		  articles={articles}
-		  loading={loading}
-		  refreshing={refreshing}
-		  loadingMore={loadingMore}
-		  section={`${section}-${categoryId || "all"}`}
-		  onRefresh={handleRefresh}
-		  onLoadMore={loadMoreArticles}
-		  panGesture={null} // We're handling gestures at the carousel level
-		  animatedStyle={{}}
-		/>
-	  </View>
-	);
-  }
