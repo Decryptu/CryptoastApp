@@ -1,7 +1,7 @@
 // app/article/[id].tsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Share, type ScrollView } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchArticle } from "../../services/api";
 import type { Article } from "../../types/article";
@@ -148,7 +148,7 @@ export default function ArticleScreen() {
 	return (
 		<SafeAreaView
 			className="flex-1 bg-white dark:bg-zinc-900"
-			edges={["right", "bottom", "left"]}
+			edges={["top", "right", "bottom", "left"]}
 		>
 			<View className="flex-1 bg-white dark:bg-zinc-900">
 				{loading ? (
