@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cryptoast",
     "slug": "Cryptoast",
-    "version": "4.3.1",
+    "version": "4.3.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
