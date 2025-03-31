@@ -148,7 +148,7 @@ export default function ArticleScreen() {
 	return (
 		<SafeAreaView
 			className="flex-1 bg-white dark:bg-zinc-900"
-			edges={["right", "bottom", "left"]}
+			edges={["top", "right", "bottom", "left"]}
 		>
 			<View className="flex-1 bg-white dark:bg-zinc-900">
 				{loading ? (

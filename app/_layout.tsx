@@ -84,10 +84,8 @@ export default function RootLayout() {
 			<Stack.Screen
 				name="article/[id]"
 				options={{
-					...commonHeaderOptions,
-					headerTitle: "",
 					presentation: "card",
-					headerShown: true,
+					headerShown: false,
 				}}
 			/>
 		</Stack>
