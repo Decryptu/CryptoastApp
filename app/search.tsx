@@ -1,5 +1,5 @@
 // app/search.tsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
 	View,
 	TextInput,
@@ -39,65 +39,66 @@ export default function SearchScreen() {
 		return () => clearTimeout(timeoutId);
 	}, []);
 
-	const fetchArticles = async (pageNumber: number, isLoadingMore = false) => {
-		const trimmedQuery = query.trim();
-		if (!trimmedQuery) return;
+	const fetchArticles = useCallback(
+		async (pageNumber: number, isLoadingMore = false) => {
+			const trimmedQuery = query.trim();
+			if (!trimmedQuery) return;
 
-		if (pageNumber === 1) {
-			setLoading(true);
-		} else {
-			setLoadingMore(true);
-		}
-
-		try {
-			// Using our cache server instead of direct WordPress API
-			const response = await fetch(
-				`${API_CONFIG.BASE_URL}/search?query=${encodeURIComponent(
-					trimmedQuery,
-				)}&page=${pageNumber}&per_page=${API_CONFIG.ITEMS_PER_PAGE}`,
-			);
-
-			if (!response.ok) {
-				if (pageNumber > 1 && response.status === 400) {
-					setHasMore(false);
-					return;
-				}
-				throw new Error(
-					`Network response was not ok. Status: ${response.status}`,
-				);
-			}
-
-			const data = await response.json();
-			const articlesArray = Array.isArray(data.articles) ? data.articles : [];
-
-			// Get total pages from response headers or metadata
-			const totalPages = data.totalPages || 1;
-			setHasMore(pageNumber < totalPages);
-
-			if (isLoadingMore) {
-				setArticles((prev) => [...prev, ...articlesArray]);
+			if (pageNumber === 1) {
+				setLoading(true);
 			} else {
-				setArticles(articlesArray);
+				setLoadingMore(true);
 			}
-		} catch (error) {
-			console.error("🔴 Search error:", error);
-			setHasMore(false);
-		} finally {
-			setLoading(false);
-			setLoadingMore(false);
-			setHasSearched(true);
-		}
-	};
 
-	const handleSearch = () => {
+			try {
+				const response = await fetch(
+					`${API_CONFIG.BASE_URL}/search?query=${encodeURIComponent(
+						trimmedQuery,
+					)}&page=${pageNumber}&per_page=${API_CONFIG.ITEMS_PER_PAGE}`,
+				);
+
+				if (!response.ok) {
+					if (pageNumber > 1 && response.status === 400) {
+						setHasMore(false);
+						return;
+					}
+					throw new Error(
+						`Network response was not ok. Status: ${response.status}`,
+					);
+				}
+
+				const data = await response.json();
+				const articlesArray = Array.isArray(data.articles) ? data.articles : [];
+
+				const totalPages = data.totalPages || 1;
+				setHasMore(pageNumber < totalPages);
+
+				if (isLoadingMore) {
+					setArticles((prev) => [...prev, ...articlesArray]);
+				} else {
+					setArticles(articlesArray);
+				}
+			} catch (error) {
+				console.error("🔴 Search error:", error);
+				setHasMore(false);
+			} finally {
+				setLoading(false);
+				setLoadingMore(false);
+				setHasSearched(true);
+			}
+		},
+		[query],
+	);
+
+	const handleSearch = useCallback(() => {
 		if (!query.trim()) return;
 		setPage(1);
 		setHasMore(true);
 		setHasSearched(true);
 		void fetchArticles(1);
-	};
+	}, [query, fetchArticles]);
 
-	const handleLoadMore = () => {
+	const handleLoadMore = useCallback(() => {
 		if (
 			loadingMore ||
 			!hasMore ||
@@ -108,25 +109,28 @@ export default function SearchScreen() {
 		const nextPage = page + 1;
 		setPage(nextPage);
 		void fetchArticles(nextPage, true);
-	};
+	}, [loadingMore, hasMore, articles.length, hasSearched, page, fetchArticles]);
 
-	const handleArticlePress = (article: Article) => {
-		router.back();
-		setTimeout(() => {
-			router.push(`/article/${article.id}`);
-		}, 50);
-	};
+	const handleArticlePress = useCallback(
+		(article: Article) => {
+			router.back();
+			setTimeout(() => {
+				router.push(`/article/${article.id}`);
+			}, 50);
+		},
+		[router],
+	);
 
-	const handleClearSearch = () => {
+	const handleClearSearch = useCallback(() => {
 		setQuery("");
 		setArticles([]);
 		setPage(1);
 		setHasMore(true);
 		setHasSearched(false);
 		searchInputRef.current?.focus();
-	};
+	}, []);
 
-	const renderFooter = () => {
+	const renderFooter = useCallback(() => {
 		if (!loadingMore) return null;
 
 		return (
@@ -137,25 +141,28 @@ export default function SearchScreen() {
 				/>
 			</View>
 		);
-	};
+	}, [loadingMore, isDark]);
 
-	const renderEmpty = () => {
+	const renderEmpty = useCallback(() => {
 		if (loading) {
 			return (
 				<View className="p-1">
 					<View className="flex-row flex-wrap">
-						{Array.from({ length: 10 }).map((_, index) => (
-							<View
-								key={`skeleton-${Math.random()}`}
-								className={
-									Platform.OS === "ios" && Platform.isPad
-										? "w-1/2 p-2"
-										: "w-full"
-								}
-							>
-								<ArticleSkeleton />
-							</View>
-						))}
+						{Array.from({ length: 10 }).map((_, idx) => {
+							const uniqueKey = `skeleton-${Date.now()}-${Math.random()}-${idx}`;
+							return (
+								<View
+									key={uniqueKey}
+									className={
+										Platform.OS === "ios" && Platform.isPad
+											? "w-1/2 p-2"
+											: "w-full"
+									}
+								>
+									<ArticleSkeleton />
+								</View>
+							);
+						})}
 					</View>
 				</View>
 			);
@@ -172,7 +179,16 @@ export default function SearchScreen() {
 		}
 
 		return null;
-	};
+	}, [loading, hasSearched, articles.length, query]);
+
+	const renderItem = useCallback(
+		({ item }: { item: Article }) => (
+			<View className="flex-1 p-2">
+				<ArticleCard article={item} onPress={() => handleArticlePress(item)} />
+			</View>
+		),
+		[handleArticlePress],
+	);
 
 	return (
 		<SafeAreaView edges={["top"]} className="flex-1 bg-white dark:bg-zinc-900">
@@ -194,7 +210,7 @@ export default function SearchScreen() {
 						onChangeText={setQuery}
 						onSubmitEditing={handleSearch}
 						returnKeyType="search"
-						autoFocus={true}
+						autoFocus
 						autoCorrect={false}
 						autoCapitalize="none"
 					/>
@@ -214,19 +230,13 @@ export default function SearchScreen() {
 				data={articles}
 				keyExtractor={(item) => item.id.toString()}
 				numColumns={Platform.OS === "ios" && Platform.isPad ? 2 : 1}
-				renderItem={({ item }) => (
-					<View className="flex-1 p-2">
-						<ArticleCard
-							article={item}
-							onPress={() => handleArticlePress(item)}
-						/>
-					</View>
-				)}
+				renderItem={renderItem}
 				contentContainerClassName="p-4"
 				ListEmptyComponent={renderEmpty}
 				ListFooterComponent={renderFooter}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
+				removeClippedSubviews
 			/>
 		</SafeAreaView>
 	);

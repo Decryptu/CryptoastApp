@@ -1,21 +1,19 @@
 // components/ArticleCard.tsx
 import type React from "react";
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { View, Text, Image } from "react-native";
-import { Pressable } from "react-native-gesture-handler";
+import { View, Text, Image, Pressable } from "react-native";
 import type { Article } from "../types/article";
 
-type Props = {
+interface Props {
 	article: Article;
 	onPress: () => void;
-};
+}
 
 export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 	const [imageError, setImageError] = useState(false);
 	const [imageLoading, setImageLoading] = useState(true);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-	// Define multiple potential image sources in order of preference
 	const imageSources = useMemo(() => {
 		if (!article) return [];
 
@@ -28,13 +26,11 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 		].filter((url) => url && typeof url === "string") as string[];
 	}, [article]);
 
-	// Get the current image URL from available sources
 	const imageUrl =
 		!imageError && currentImageIndex < imageSources.length
 			? imageSources[currentImageIndex]
 			: null;
 
-	// Extract and format article metadata
 	const authorName =
 		article.yoast_head_json?.author || article._embedded?.author?.[0]?.name;
 	const readingTime =
@@ -49,42 +45,35 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 		}).format(date);
 	}, [article.date]);
 
-	const cleanHtml = (html: string) => {
-		return html.replace(/<\/?[^>]+(>|$)/g, "");
-	};
+	const cleanHtml = (html: string) => html.replace(/<\/?[^>]+(>|$)/g, "");
 
 	const handleImageError = useCallback(() => {
-		// If current image fails, try the next one in our sources array
 		if (currentImageIndex < imageSources.length - 1) {
-			console.log(
-				`🖼️ Image failed at index ${currentImageIndex}, trying next source...`,
-			);
 			setCurrentImageIndex((prevIndex) => prevIndex + 1);
 			setImageLoading(true);
 		} else {
-			// If all image sources failed, show a placeholder or no image
-			console.log(`⚠️ All image sources failed for article ${article.id}`);
 			setImageError(true);
 			setImageLoading(false);
 		}
-	}, [currentImageIndex, imageSources.length, article.id]);
+	}, [currentImageIndex, imageSources.length]);
 
 	const handleImageLoad = useCallback(() => {
 		setImageLoading(false);
 	}, []);
 
-	// Reset state if article changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		setImageError(false);
 		setCurrentImageIndex(0);
 		setImageLoading(true);
-	}, []); // Dependency array is empty as this should only run once when component mounts
+	}, [article.id]); // Reset when article changes
 
 	return (
 		<Pressable
 			onPress={onPress}
 			style={({ pressed }) => ({
 				opacity: pressed ? 0.95 : 1,
+				transform: [{ scale: pressed ? 0.98 : 1 }],
 			})}
 		>
 			<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg mb-4 overflow-hidden">
