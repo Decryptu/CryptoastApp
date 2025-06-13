@@ -3,7 +3,7 @@ import { API_CONFIG } from "../config/api";
 import { CATEGORY_MAPPINGS } from "../data/categories";
 import type { Article } from "../types/article";
 
-export type ContentSection = keyof typeof CATEGORY_MAPPINGS;
+export type ContentSection = keyof typeof CATEGORY_MAPPINGS | 'HOME';
 
 const buildCategoryParam = (categories?: number[]): string =>
 	categories?.length ? `&categories=${categories.join(",")}` : "";
@@ -33,7 +33,7 @@ export const fetchLatestArticles = async (
 };
 
 export const fetchSectionArticles = async (
-	section: ContentSection,
+	section: Exclude<ContentSection, 'HOME'>,
 	page = 1,
 	perPage = API_CONFIG.ITEMS_PER_PAGE,
 	categoryId?: number,

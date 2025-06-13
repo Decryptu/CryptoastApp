@@ -15,7 +15,8 @@ interface UseCategoriesReturn {
 
 export function useCategories(section: ContentSection): UseCategoriesReturn {
   const sectionCategories = useMemo(() => {
-    if (section === 'SHEETS') return [];
+    // HOME section doesn't have sub-categories - it uses the main sections as tabs
+    if (section === 'HOME' || section === 'SHEETS') return [];
 
     const sectionIds = Array.from(CATEGORY_MAPPINGS[section]) as (typeof CATEGORY_MAPPINGS[typeof section][number])[];
     
