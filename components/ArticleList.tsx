@@ -1,5 +1,5 @@
 // components/ArticleList.tsx
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   FlatList,
