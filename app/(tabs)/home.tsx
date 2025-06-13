@@ -5,35 +5,45 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { CategoryCarousel } from '../../components/CategoryCarousel';
-import { ArticleListScreen } from '../../components/ArticleListScreen';
-import { fetchNews, fetchGuides, fetchSheets, fetchReports } from '../../services/api';
-import { HOME_SECTIONS } from '../../constants/routes';
-import type { ContentSection } from '../../services/api';
+import { ArticleList } from '../../components/ArticleList';
+import { useArticles } from '../../hooks/useArticles';
+import { fetchAll, fetchNews, fetchGuides, fetchSheets, fetchReports } from '../../services/api';
 
-// Map section names to their fetch functions and content sections
-const SECTION_CONFIG = {
-  news: { fetchFn: fetchNews, section: 'NEWS' as ContentSection, logLabel: 'news' },
-  guides: { fetchFn: fetchGuides, section: 'GUIDES' as ContentSection, logLabel: 'guides' },
-  sheets: { fetchFn: fetchSheets, section: 'SHEETS' as ContentSection, logLabel: 'sheets' },
-  reports: { fetchFn: fetchReports, section: 'REPORTS' as ContentSection, logLabel: 'reports' },
-} as const;
+// Simple section configuration
+const SECTIONS = [
+  { id: 0, name: 'Tout', fetchFn: fetchAll },
+  { id: 1, name: 'Actualités', fetchFn: fetchNews },
+  { id: 2, name: 'Formations', fetchFn: fetchGuides },
+  { id: 3, name: 'Analyses', fetchFn: fetchSheets },
+  { id: 4, name: 'Dossiers', fetchFn: fetchReports },
+] as const;
 
 const SectionPage = React.memo<{
-  sectionName: string;
-}>(({ sectionName }) => {
-  const config = SECTION_CONFIG[sectionName as keyof typeof SECTION_CONFIG];
+  sectionIndex: number;
+}>(({ sectionIndex }) => {
+  const section = SECTIONS[sectionIndex];
   
-  if (!config) {
-    console.warn(`No config found for section: ${sectionName}`);
-    return <View className="flex-1" />;
-  }
-
+  const { articles, loading, refreshing, loadingMore, loadMoreArticles, handleRefresh } = 
+    useArticles({ 
+      fetchArticles: section.fetchFn, 
+      logLabel: section.name.toLowerCase(), 
+      selectedCategory: null 
+    });
+  
   return (
-    <ArticleListScreen
-      fetchArticles={config.fetchFn}
-      logLabel={config.logLabel}
-      section={config.section}
-    />
+    <View className="flex-1">
+      <ArticleList
+        articles={articles}
+        loading={loading}
+        refreshing={refreshing}
+        loadingMore={loadingMore}
+        section={section.name}
+        onRefresh={handleRefresh}
+        onLoadMore={loadMoreArticles}
+        panGesture={null}
+        animatedStyle={{}}
+      />
+    </View>
   );
 });
 
@@ -42,18 +52,13 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Convert HOME_SECTIONS to the format expected by CategoryTabs
+  // Convert sections to category format for tabs
   const sectionCategories = useMemo(() => 
-    HOME_SECTIONS.map(section => ({
-      id: HOME_SECTIONS.findIndex(s => s.name === section.name),
-      name: section.title,
+    SECTIONS.map(section => ({
+      id: section.id,
+      name: section.name,
     })),
     []
-  );
-
-  const selectedSectionId = useMemo(() => 
-    currentIndex, 
-    [currentIndex]
   );
 
   const handleSelectSection = useCallback((sectionId: number | null) => {
@@ -63,28 +68,22 @@ export default function HomeScreen() {
     }
   }, [currentIndex]);
 
-  const renderSectionPage = useCallback((sectionId: number | null, index: number) => {
-    const sectionIndex = sectionId ?? index;
-    const section = HOME_SECTIONS[sectionIndex];
+  const renderSectionPage = useCallback((categoryId: number | null, index: number) => {
+    const sectionIndex = categoryId ?? index;
     
-    if (!section) {
-      console.warn(`No section found for index: ${sectionIndex}`);
-      return <View className="flex-1" />;
-    }
-
     return (
       <SectionPage
-        key={`section-${section.name}`}
-        sectionName={section.name}
+        key={`section-${sectionIndex}`}
+        sectionIndex={sectionIndex}
       />
     );
   }, []);
 
-  // Convert sections to categories format for the carousel
-  const sectionsAsCategories = useMemo(() => 
-    HOME_SECTIONS.map((section, index) => ({
-      id: index,
-      name: section.title,
+  // Categories for carousel (same as sections)
+  const carouselCategories = useMemo(() => 
+    SECTIONS.map(section => ({
+      id: section.id,
+      name: section.name,
     })),
     []
   );
@@ -95,7 +94,7 @@ export default function HomeScreen() {
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <View className="flex-1">
           <CategoryTabs
-            selectedCategory={selectedSectionId}
+            selectedCategory={currentIndex}
             onSelectCategory={handleSelectSection}
             categories={sectionCategories}
           />
@@ -103,7 +102,7 @@ export default function HomeScreen() {
           <CategoryCarousel
             currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
-            categories={sectionsAsCategories}
+            categories={carouselCategories}
             renderCategoryPage={renderSectionPage}
             section="HOME"
           />

@@ -21,7 +21,7 @@ interface CategoryCarouselProps {
 
 const { width } = Dimensions.get('window');
 const SPRING_CONFIG = { damping: 20, stiffness: 200 };
-const MIN_SWIPE_DISTANCE = 25; // Increased to avoid interference with vertical scrolling
+const MIN_SWIPE_DISTANCE = 25;
 const RENDER_WINDOW = 1;
 
 export function CategoryCarousel({
@@ -31,7 +31,8 @@ export function CategoryCarousel({
   renderCategoryPage,
   section,
 }: CategoryCarouselProps) {
-  const allCategories = [{ id: null, name: 'All' }, ...categories];
+  // Don't add extra "All" - use categories as-is since HOME_SECTIONS already includes "All"
+  const allCategories = categories;
 
   const translateX = useSharedValue(-currentIndex * width);
   const currentIndexSV = useSharedValue(currentIndex);
@@ -46,14 +47,12 @@ export function CategoryCarousel({
 
   const gestures = useMemo(() => {
     const panGesture = Gesture.Pan()
-      // More restrictive horizontal detection to not interfere with vertical scrolling
       .activeOffsetX([-MIN_SWIPE_DISTANCE, MIN_SWIPE_DISTANCE])
-      .failOffsetY([-30, 30]) // Fail more easily on vertical movement
+      .failOffsetY([-30, 30])
       .onBegin(() => {
         hasSwipedHorizontally.value = false;
       })
       .onUpdate((e) => {
-        // Only proceed if horizontal movement is dominant
         if (Math.abs(e.translationX) > Math.abs(e.translationY) && 
             Math.abs(e.translationX) > MIN_SWIPE_DISTANCE) {
           hasSwipedHorizontally.value = true;
@@ -72,7 +71,6 @@ export function CategoryCarousel({
         }
       })
       .onEnd((e) => {
-        // Only handle if we had significant horizontal movement
         if (!hasSwipedHorizontally.value) return;
 
         const currentOffset = -currentIndexSV.value * width;
@@ -101,7 +99,6 @@ export function CategoryCarousel({
         currentIndexSV.value = newIndex;
       });
 
-    // Simplified simultaneous gesture to allow both horizontal and vertical scrolling
     return panGesture;
   }, [allCategories.length, currentIndexSV, hasSwipedHorizontally, translateX, setCurrentIndex]);
 
@@ -130,7 +127,7 @@ export function CategoryCarousel({
         >
           {allCategories.map((category, index) => (
             <View
-              key={`category-${category.id || 'all'}-${section}`}
+              key={`${section}-${category.name}-${index}`} // Fixed key to be more unique
               style={{ width, height: '100%' }}
             >
               {visibleIndices.includes(index) ? (
