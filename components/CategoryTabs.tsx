@@ -26,31 +26,7 @@ export const CategoryTabs = React.memo(function CategoryTabs({
 				className="px-4"
 				contentContainerStyle={{ height: 40 }}
 			>
-				{/* All Categories Tab */}
-				<View className="mr-4 h-full justify-center">
-					<Pressable
-						onPress={() => onSelectCategory(null)}
-						className="h-full justify-center px-2"
-					>
-						<Text
-							className={`${
-								selectedCategory === null
-									? "text-primary-600"
-									: "text-zinc-500 dark:text-zinc-400"
-							}`}
-						>
-							Tout
-						</Text>
-						{/* Active Indicator */}
-						<View
-							className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-								selectedCategory === null ? "bg-primary-600" : "bg-transparent"
-							}`}
-						/>
-					</Pressable>
-				</View>
-
-				{/* Category Tabs */}
+				{/* Render categories directly - no manual "All" tab */}
 				{categories.map((category) => (
 					<View key={category.id} className="mr-4 h-full justify-center">
 						<Pressable
@@ -65,9 +41,8 @@ export const CategoryTabs = React.memo(function CategoryTabs({
 								}`}
 								numberOfLines={1}
 							>
-								{category.name.replace(/^Actualité\s|^Guide\s/, "")}
+								{category.name}
 							</Text>
-							{/* Active Indicator */}
 							<View
 								className={`absolute bottom-0 left-0 right-0 h-0.5 ${
 									selectedCategory === category.id

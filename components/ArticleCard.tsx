@@ -1,6 +1,6 @@
 // components/ArticleCard.tsx
 import type React from "react";
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { View, Text, Image, Pressable } from "react-native";
 import type { Article } from "../types/article";
 
@@ -11,19 +11,18 @@ interface Props {
 
 export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 	const [imageError, setImageError] = useState(false);
-	const [imageLoading, setImageLoading] = useState(true);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
+	const pressTimeRef = useRef<number>(0);
 
 	const imageSources = useMemo(() => {
 		if (!article) return [];
-
 		return [
 			article.yoast_head_json?.og_image?.[0]?.url,
 			article._embedded?.["wp:featuredmedia"]?.[0]?.media_details?.sizes
 				?.medium_large?.source_url,
 			article._embedded?.["wp:featuredmedia"]?.[0]?.source_url,
 			article.schema?.["@graph"]?.[0]?.thumbnailUrl,
-		].filter((url) => url && typeof url === "string") as string[];
+		].filter(Boolean) as string[];
 	}, [article]);
 
 	const imageUrl =
@@ -49,28 +48,34 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 
 	const handleImageError = useCallback(() => {
 		if (currentImageIndex < imageSources.length - 1) {
-			setCurrentImageIndex((prevIndex) => prevIndex + 1);
-			setImageLoading(true);
+			setCurrentImageIndex((prev) => prev + 1);
 		} else {
 			setImageError(true);
-			setImageLoading(false);
 		}
 	}, [currentImageIndex, imageSources.length]);
 
-	const handleImageLoad = useCallback(() => {
-		setImageLoading(false);
+	const handlePressIn = useCallback(() => {
+		pressTimeRef.current = Date.now();
 	}, []);
+
+	const handlePressOut = useCallback(() => {
+		const pressDuration = Date.now() - pressTimeRef.current;
+		// Only trigger onPress if it was a short tap (not a swipe)
+		if (pressDuration < 300) {
+			onPress();
+		}
+	}, [onPress]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		setImageError(false);
 		setCurrentImageIndex(0);
-		setImageLoading(true);
-	}, [article.id]); // Reset when article changes
+	}, [article.id]);
 
 	return (
 		<Pressable
-			onPress={onPress}
+			onPressIn={handlePressIn}
+			onPressOut={handlePressOut}
 			style={({ pressed }) => ({
 				opacity: pressed ? 0.95 : 1,
 				transform: [{ scale: pressed ? 0.98 : 1 }],
@@ -78,18 +83,12 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 		>
 			<View className="bg-zinc-100 dark:bg-zinc-800 rounded-lg mb-4 overflow-hidden">
 				{imageUrl ? (
-					<View className="w-full h-48">
-						<Image
-							source={{ uri: imageUrl }}
-							className="w-full h-full"
-							resizeMode="cover"
-							onError={handleImageError}
-							onLoad={handleImageLoad}
-						/>
-						{imageLoading && (
-							<View className="absolute w-full h-full bg-zinc-200 dark:bg-zinc-700" />
-						)}
-					</View>
+					<Image
+						source={{ uri: imageUrl }}
+						className="w-full h-48"
+						resizeMode="cover"
+						onError={handleImageError}
+					/>
 				) : (
 					<View className="w-full h-24 bg-zinc-200 dark:bg-zinc-700 items-center justify-center">
 						<Text className="text-zinc-500 dark:text-zinc-400">
@@ -97,6 +96,7 @@ export const ArticleCard: React.FC<Props> = ({ article, onPress }) => {
 						</Text>
 					</View>
 				)}
+
 				<View className="p-4">
 					<Text
 						className="text-lg leading-5 font-bold text-zinc-900 dark:text-white mb-2"

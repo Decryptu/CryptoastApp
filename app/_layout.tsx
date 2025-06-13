@@ -38,7 +38,7 @@ export default function RootLayout() {
         name="article/[id]" 
         options={{
           title: 'Article',
-          headerShown: true, // Re-enable header for articles
+          headerShown: true,
           presentation: 'card',
           headerBackTitle: Platform.OS === 'ios' ? 'Retour' : undefined,
         }} 

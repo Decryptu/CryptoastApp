@@ -1,6 +1,6 @@
 // components/CategoryCarousel.tsx
 import type React from 'react';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { View, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -20,121 +20,64 @@ interface CategoryCarouselProps {
 }
 
 const { width } = Dimensions.get('window');
-const SPRING_CONFIG = { damping: 20, stiffness: 200 };
-const MIN_SWIPE_DISTANCE = 25;
-const RENDER_WINDOW = 1;
 
 export function CategoryCarousel({
   currentIndex,
   setCurrentIndex,
   categories,
   renderCategoryPage,
-  section,
 }: CategoryCarouselProps) {
-  // Don't add extra "All" - use categories as-is since HOME_SECTIONS already includes "All"
-  const allCategories = categories;
-
   const translateX = useSharedValue(-currentIndex * width);
-  const currentIndexSV = useSharedValue(currentIndex);
-  const hasSwipedHorizontally = useSharedValue(false);
+  const startTranslateX = useSharedValue(0);
 
   useEffect(() => {
-    if (currentIndexSV.value !== currentIndex) {
-      translateX.value = withSpring(-currentIndex * width, SPRING_CONFIG);
-      currentIndexSV.value = currentIndex;
-    }
-  }, [currentIndex, translateX, currentIndexSV]);
+    translateX.value = withSpring(-currentIndex * width);
+  }, [currentIndex, translateX]);
 
-  const gestures = useMemo(() => {
-    const panGesture = Gesture.Pan()
-      .activeOffsetX([-MIN_SWIPE_DISTANCE, MIN_SWIPE_DISTANCE])
-      .failOffsetY([-30, 30])
-      .onBegin(() => {
-        hasSwipedHorizontally.value = false;
-      })
-      .onUpdate((e) => {
-        if (Math.abs(e.translationX) > Math.abs(e.translationY) && 
-            Math.abs(e.translationX) > MIN_SWIPE_DISTANCE) {
-          hasSwipedHorizontally.value = true;
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      startTranslateX.value = translateX.value;
+    })
+    .onUpdate((e) => {
+      translateX.value = startTranslateX.value + e.translationX;
+    })
+    .onEnd((e) => {
+      const threshold = width * 0.3;
+      let newIndex = currentIndex;
 
-          const newTranslateX = -currentIndexSV.value * width + e.translationX;
+      if (e.translationX > threshold && currentIndex > 0) {
+        newIndex = currentIndex - 1;
+      } else if (e.translationX < -threshold && currentIndex < categories.length - 1) {
+        newIndex = currentIndex + 1;
+      }
 
-          if (newTranslateX > 0) {
-            translateX.value = Math.min(width * 0.3, newTranslateX * 0.3);
-          } else if (newTranslateX < -(allCategories.length - 1) * width) {
-            const overscroll = Math.abs(newTranslateX + (allCategories.length - 1) * width);
-            translateX.value =
-              -((allCategories.length - 1) * width) - Math.min(width * 0.3, overscroll * 0.3);
-          } else {
-            translateX.value = newTranslateX;
-          }
-        }
-      })
-      .onEnd((e) => {
-        if (!hasSwipedHorizontally.value) return;
+      translateX.value = withSpring(-newIndex * width);
 
-        const currentOffset = -currentIndexSV.value * width;
-        let newIndex = currentIndexSV.value;
-
-        if (Math.abs(e.velocityX) > 500) {
-          if (e.velocityX > 0) {
-            newIndex = Math.max(currentIndexSV.value - 1, 0);
-          } else {
-            newIndex = Math.min(currentIndexSV.value + 1, allCategories.length - 1);
-          }
-        } else {
-          const dragDistance = translateX.value - currentOffset;
-          if (dragDistance > width * 0.35) {
-            newIndex = Math.max(currentIndexSV.value - 1, 0);
-          } else if (dragDistance < -width * 0.35) {
-            newIndex = Math.min(currentIndexSV.value + 1, allCategories.length - 1);
-          }
-        }
-
-        if (newIndex !== currentIndexSV.value) {
-          runOnJS(setCurrentIndex)(newIndex);
-        }
-
-        translateX.value = withSpring(-newIndex * width, SPRING_CONFIG);
-        currentIndexSV.value = newIndex;
-      });
-
-    return panGesture;
-  }, [allCategories.length, currentIndexSV, hasSwipedHorizontally, translateX, setCurrentIndex]);
+      if (newIndex !== currentIndex) {
+        runOnJS(setCurrentIndex)(newIndex);
+      }
+    });
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
-  const visibleIndices = useMemo(() => {
-    const minIndex = Math.max(0, currentIndex - RENDER_WINDOW);
-    const maxIndex = Math.min(allCategories.length - 1, currentIndex + RENDER_WINDOW);
-    return Array.from({ length: maxIndex - minIndex + 1 }, (_, i) => minIndex + i);
-  }, [currentIndex, allCategories.length]);
-
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <GestureDetector gesture={gestures}>
+    <View className="flex-1">
+      <GestureDetector gesture={panGesture}>
         <Animated.View
           style={[
             {
               flexDirection: 'row',
-              width: width * allCategories.length,
+              width: width * categories.length,
               height: '100%',
             },
             animatedStyle,
           ]}
         >
-          {allCategories.map((category, index) => (
-            <View
-              key={`${section}-${category.name}-${index}`} // Fixed key to be more unique
-              style={{ width, height: '100%' }}
-            >
-              {visibleIndices.includes(index) ? (
-                renderCategoryPage(category.id, index)
-              ) : (
-                <View style={{ flex: 1 }} />
-              )}
+          {categories.map((category, index) => (
+            <View key={`${category.name}-${index}`} style={{ width, height: '100%' }}>
+              {renderCategoryPage(category.id, index)}
             </View>
           ))}
         </Animated.View>
