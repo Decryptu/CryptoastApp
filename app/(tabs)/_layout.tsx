@@ -1,3 +1,4 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import { useColorScheme, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";

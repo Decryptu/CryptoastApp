@@ -1,3 +1,4 @@
+// app/(tabs)/reports.tsx
 import { ArticleListScreen } from "../../components/ArticleListScreen";
 import { fetchReports } from "../../services/api";
 

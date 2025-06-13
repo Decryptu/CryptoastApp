@@ -1,3 +1,4 @@
+// utils/events.ts
 import type { FlatList } from "react-native";
 
 type ScrollToTopEvent = {

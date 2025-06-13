@@ -1,3 +1,4 @@
+// components/ArticleContent.tsx
 import React, { type FC, useCallback, useMemo } from "react";
 import {
 	useWindowDimensions,

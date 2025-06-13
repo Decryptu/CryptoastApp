@@ -1,3 +1,4 @@
+// constants/routes.ts
 import type { Feather } from "@expo/vector-icons";
 
 export type TabRoute = {

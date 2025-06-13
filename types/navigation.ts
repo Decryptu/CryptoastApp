@@ -1,3 +1,4 @@
+// types/navigation.ts
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Article } from './article';
 

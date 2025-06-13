@@ -1,3 +1,4 @@
+// app/_layout.tsx
 import { Stack } from "expo-router";
 import { useColorScheme, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";

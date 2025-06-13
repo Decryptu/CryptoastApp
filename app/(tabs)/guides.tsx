@@ -1,3 +1,4 @@
+// app/(tabs)/guides.tsx
 import { ArticleListScreen } from "../../components/ArticleListScreen";
 import { fetchGuides } from "../../services/api";
 
