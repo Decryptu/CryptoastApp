@@ -35,6 +35,7 @@ export function CategoryCarousel({
   }, [currentIndex, translateX]);
 
   const panGesture = Gesture.Pan()
+    .minDistance(15)
     .onBegin(() => {
       startTranslateX.value = translateX.value;
     })

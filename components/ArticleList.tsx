@@ -9,14 +9,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { ViewStyle } from 'react-native';
-import type { AnimatedStyle } from 'react-native-reanimated';
-import Animated from 'react-native-reanimated';
-import { GestureDetector } from 'react-native-gesture-handler';
 import { ArticleCard } from './ArticleCard';
 import { ArticleSkeleton } from './ArticleSkeleton';
 import type { Article } from '../types/article';
-import type { GestureType } from '../types/animation';
 import colors from 'tailwindcss/colors';
 
 interface ArticleListProps {
@@ -27,8 +22,6 @@ interface ArticleListProps {
   section: string;
   onRefresh: () => void;
   onLoadMore: () => void;
-  panGesture: GestureType | null;
-  animatedStyle: AnimatedStyle<ViewStyle>;
 }
 
 const SKELETON_COUNT = 10;
@@ -40,8 +33,6 @@ export function ArticleList({
   loadingMore,
   onRefresh,
   onLoadMore,
-  panGesture,
-  animatedStyle,
 }: ArticleListProps) {
   const listRef = useRef<FlatList>(null);
   const router = useRouter();
@@ -118,15 +109,5 @@ export function ArticleList({
     />
   );
 
-  const content = panGesture ? (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View style={animatedStyle} className="flex-1">
-        {flatListContent}
-      </Animated.View>
-    </GestureDetector>
-  ) : (
-    <View className="flex-1">{flatListContent}</View>
-  );
-
-  return loading ? renderSkeletons() : content;
+  return loading ? renderSkeletons() : flatListContent;
 }

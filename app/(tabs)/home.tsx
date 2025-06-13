@@ -35,8 +35,6 @@ const SectionPage = React.memo<{ sectionIndex: number }>(({ sectionIndex }) => {
       section={section.name}
       onRefresh={handleRefresh}
       onLoadMore={loadMoreArticles}
-      panGesture={null}
-      animatedStyle={{}}
     />
   );
 });
@@ -52,7 +50,6 @@ export default function HomeScreen() {
   }));
 
   const handleSelectSection = useCallback((sectionId: number | null) => {
-    // Handle null as 0 (first section), otherwise use the ID directly
     const newIndex = sectionId ?? 0;
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex);
