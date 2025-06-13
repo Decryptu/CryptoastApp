@@ -1,3 +1,4 @@
+// components/ScrollToTopButton.tsx
 import type React from "react";
 import { TouchableOpacity, Animated } from "react-native";
 import { Feather } from "@expo/vector-icons";

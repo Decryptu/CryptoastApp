@@ -1,111 +1,100 @@
 // hooks/useArticles.ts
-import { useState, useCallback, useEffect } from "react";
-import { API_CONFIG } from "../config/api";
-import type { Article } from "../types/article";
+import { useState, useCallback, useEffect } from 'react';
+import { API_CONFIG } from '../config/api';
+import type { Article } from '../types/article';
 
 interface UseArticlesProps {
-	fetchArticles: (
-		page?: number,
-		perPage?: number,
-		categoryId?: number,
-	) => Promise<Article[]>;
-	logLabel: string;
-	selectedCategory: number | null;
+  fetchArticles: (page?: number, perPage?: number, categoryId?: number) => Promise<Article[]>;
+  logLabel: string;
+  selectedCategory: number | null;
+}
+
+interface UseArticlesReturn {
+  articles: Article[];
+  loading: boolean;
+  refreshing: boolean;
+  loadingMore: boolean;
+  hasMoreArticles: boolean;
+  loadMoreArticles: () => Promise<void>;
+  handleRefresh: () => Promise<void>;
 }
 
 export function useArticles({
-	fetchArticles,
-	logLabel,
-	selectedCategory,
-}: UseArticlesProps) {
-	const [articles, setArticles] = useState<Article[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [hasMoreArticles, setHasMoreArticles] = useState(true);
-	const [currentPage, setCurrentPage] = useState(1);
+  fetchArticles,
+  logLabel,
+  selectedCategory,
+}: UseArticlesProps): UseArticlesReturn {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreArticles, setHasMoreArticles] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
-	const fetchArticlesData = useCallback(
-		async (page: number, forceRefresh = false) => {
-			console.log(
-				`🔍 Loading page ${page} of articles for category: ${selectedCategory || "all"}`,
-			);
+  const loadPage = useCallback(async (page: number) => {
+    const data = await fetchArticles(page, API_CONFIG.ITEMS_PER_PAGE, selectedCategory ?? undefined);
+    console.log(`✅ Fetched ${data.length} ${logLabel} for page ${page}`);
+    
+    if (data.length < API_CONFIG.ITEMS_PER_PAGE) {
+      setHasMoreArticles(false);
+    }
+    
+    return data;
+  }, [fetchArticles, logLabel, selectedCategory]);
 
-			// If forceRefresh is true, we can add a cache-busting query parameter
-			const data = await fetchArticles(
-				page,
-				API_CONFIG.ITEMS_PER_PAGE,
-				selectedCategory || undefined,
-			);
+  const loadArticles = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await loadPage(1);
+      setArticles(data);
+      setCurrentPage(1);
+      setHasMoreArticles(data.length === API_CONFIG.ITEMS_PER_PAGE);
+    } catch (error) {
+      console.error(`❌ Failed to load ${logLabel}:`, error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadPage, logLabel]);
 
-			console.log(`✅ Fetched ${data.length} ${logLabel} for page ${page}`);
+  const loadMoreArticles = useCallback(async () => {
+    if (loadingMore || !hasMoreArticles) return;
 
-			if (data.length < API_CONFIG.ITEMS_PER_PAGE) {
-				setHasMoreArticles(false);
-			}
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+      const newArticles = await loadPage(nextPage);
+      
+      setArticles(prev => [...prev, ...newArticles]);
+      setCurrentPage(nextPage);
+      
+      if (newArticles.length < API_CONFIG.ITEMS_PER_PAGE) {
+        setHasMoreArticles(false);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load more articles:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [currentPage, loadPage, hasMoreArticles, loadingMore]);
 
-			return data;
-		},
-		[fetchArticles, logLabel, selectedCategory],
-	);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setHasMoreArticles(true);
+    await loadArticles();
+    setRefreshing(false);
+  }, [loadArticles]);
 
-	const loadArticles = useCallback(
-		async (forceRefresh = false) => {
-			try {
-				setLoading(true);
-				const data = await fetchArticlesData(1, forceRefresh);
-				setArticles(data);
-				setCurrentPage(1);
-				setHasMoreArticles(data.length === API_CONFIG.ITEMS_PER_PAGE);
-			} catch (error) {
-				console.error(`❌ Failed to load ${logLabel}:`, error);
-			} finally {
-				setLoading(false);
-			}
-		},
-		[fetchArticlesData, logLabel],
-	);
+  useEffect(() => {
+    void loadArticles();
+  }, [loadArticles]);
 
-	const loadMoreArticles = useCallback(async () => {
-		if (loadingMore || !hasMoreArticles) return;
-
-		try {
-			setLoadingMore(true);
-			console.log(`📥 Loading more articles (page ${currentPage + 1})`);
-
-			const newArticles = await fetchArticlesData(currentPage + 1);
-			setArticles((prev) => [...prev, ...newArticles]);
-			setCurrentPage((prev) => prev + 1);
-
-			if (newArticles.length < API_CONFIG.ITEMS_PER_PAGE) {
-				setHasMoreArticles(false);
-				console.log("📪 No more articles to load");
-			}
-		} catch (error) {
-			console.error("❌ Failed to load more articles:", error);
-		} finally {
-			setLoadingMore(false);
-		}
-	}, [currentPage, fetchArticlesData, hasMoreArticles, loadingMore]);
-
-	const handleRefresh = useCallback(async () => {
-		setRefreshing(true);
-		setHasMoreArticles(true);
-		await loadArticles(true);
-		setRefreshing(false);
-	}, [loadArticles]);
-
-	useEffect(() => {
-		void loadArticles();
-	}, [loadArticles]);
-
-	return {
-		articles,
-		loading,
-		refreshing,
-		loadingMore,
-		hasMoreArticles,
-		loadMoreArticles,
-		handleRefresh,
-	};
+  return {
+    articles,
+    loading,
+    refreshing,
+    loadingMore,
+    hasMoreArticles,
+    loadMoreArticles,
+    handleRefresh,
+  };
 }

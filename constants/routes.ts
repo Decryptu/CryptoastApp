@@ -1,43 +1,29 @@
 // constants/routes.ts
-import type { Feather } from "@expo/vector-icons";
-
-export type TabRoute = {
-	name: string;
-	title: string;
-	iconName: keyof typeof Feather.glyphMap;
-};
+import type { ComponentProps } from 'react';
+import type { Feather } from '@expo/vector-icons';
 
 export const ROUTES = {
-	NEWS: "news",
-	GUIDES: "guides",
-	SHEETS: "sheets",
-	REPORTS: "reports",
+  NEWS: 'news',
+  GUIDES: 'guides', 
+  SHEETS: 'sheets',
+  REPORTS: 'reports',
 } as const;
 
-export const TAB_ROUTES: TabRoute[] = [
-	{
-		name: ROUTES.NEWS,
-		title: "Actualités",
-		iconName: "home",
-	},
-	{
-		name: ROUTES.GUIDES,
-		title: "Formations",
-		iconName: "book",
-	},
-	{
-		name: ROUTES.SHEETS,
-		title: "Analyses",
-		iconName: "file-text",
-	},
-	{
-		name: ROUTES.REPORTS,
-		title: "Dossiers",
-		iconName: "bar-chart-2",
-	},
+export type RouteKey = keyof typeof ROUTES;
+export type RouteName = typeof ROUTES[RouteKey];
+
+export interface TabRoute {
+  readonly name: RouteName;
+  readonly title: string;
+  readonly iconName: ComponentProps<typeof Feather>['name'];
+}
+
+export const TAB_ROUTES: readonly TabRoute[] = [
+  { name: ROUTES.NEWS, title: 'Actualités', iconName: 'home' },
+  { name: ROUTES.GUIDES, title: 'Formations', iconName: 'book' },
+  { name: ROUTES.SHEETS, title: 'Analyses', iconName: 'file-text' },
+  { name: ROUTES.REPORTS, title: 'Dossiers', iconName: 'bar-chart-2' },
 ] as const;
 
-export function getRouteTitle(routeName: string): string {
-	const route = TAB_ROUTES.find((r) => r.name === routeName);
-	return route?.title || "Actualités";
-}
+export const getRouteTitle = (routeName: string): string => 
+  TAB_ROUTES.find(route => route.name === routeName)?.title ?? 'Actualités';
